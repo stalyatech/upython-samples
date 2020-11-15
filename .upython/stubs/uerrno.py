@@ -1,0 +1,28 @@
+"""
+Module: 'uerrno' on pySBC 1.13.0 with FW1.0-171
+"""
+# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW1.0', version='v1.13-171-g7720a5aa6-dirty on 2020-10-20', machine='simpleRTK-SBC with STM32F745')
+# Stubber: 1.3.4
+EACCES = 13
+EADDRINUSE = 98
+EAGAIN = 11
+EALREADY = 114
+EBADF = 9
+ECONNABORTED = 103
+ECONNREFUSED = 111
+ECONNRESET = 104
+EEXIST = 17
+EHOSTUNREACH = 113
+EINPROGRESS = 115
+EINVAL = 22
+EIO = 5
+EISDIR = 21
+ENOBUFS = 105
+ENODEV = 19
+ENOENT = 2
+ENOMEM = 12
+ENOTCONN = 107
+EOPNOTSUPP = 95
+EPERM = 1
+ETIMEDOUT = 110
+errorcode = None

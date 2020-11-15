@@ -1,7 +1,7 @@
 """
-Module: 'sty' on pySBC 1.13.0 with FW1.0-171
+Module: 'sty' on pySBC 1.13.0 with FW1.5.7-225
 """
-# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW1.0', version='v1.13-171-g7720a5aa6-dirty on 2020-10-20', machine='simpleRTK-SBC with STM32F745')
+# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW1.5.7', version='v1.13-225-g7d9d01bd1-dirty on 2020-11-15', machine='simpleRTK-SBC with STM32F745')
 # Stubber: 1.3.4
 
 class ADC:
@@ -152,6 +152,16 @@ class I2C:
 
 class Imu:
     ''
+    ACCEL_X = 0
+    ACCEL_Y = 1
+    ACCEL_Z = 2
+    DCM = None
+    DT = 6
+    GYRO_X = 3
+    GYRO_Y = 4
+    GYRO_Z = 5
+    Madgwick = None
+    Mahony = None
     def ax():
         pass
 
@@ -159,9 +169,6 @@ class Imu:
         pass
 
     def az():
-        pass
-
-    def filter():
         pass
 
     def gx():

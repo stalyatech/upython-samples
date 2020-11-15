@@ -1,12 +1,12 @@
 {	"firmware": 
 	{
 		"machine": "simpleRTK-SBC with STM32F745", 
-		"firmware": "pySBC 1.13.0 with FW1.0-171", 
+		"firmware": "pySBC 1.13.0 with FW1.5.7-225", 
 		"nodename": "pySBC", 
-		"version" : "1.13.0", 
-		"release" : "1.13.0 with FW1.0", 
-		"sysname" : "pySBC"
-	},
+		"version": "1.13.0", 
+		"release": "1.13.0 with FW1.5.7", 
+		"sysname": "pySBC"
+	
 		
 	"stubber": 
 	{
@@ -45,11 +45,13 @@
 		{"file": "/stubs/re.py", "module": "re"},
 		{"file": "/stubs/select.py", "module": "select"},
 		{"file": "/stubs/socket.py", "module": "socket"},
+		{"file": "/stubs/ssl.py", "module": "ssl"},
 		{"file": "/stubs/struct.py", "module": "struct"},
 		{"file": "/stubs/sys.py", "module": "sys"},
 		{"file": "/stubs/time.py", "module": "time"},
 		{"file": "/stubs/ubinascii.py", "module": "ubinascii"},
 		{"file": "/stubs/ucollections.py", "module": "ucollections"},
+		{"file": "/stubs/ucryptolib.py", "module": "ucryptolib"},
 		{"file": "/stubs/uctypes.py", "module": "uctypes"},
 		{"file": "/stubs/uerrno.py", "module": "uerrno"},
 		{"file": "/stubs/uhashlib.py", "module": "uhashlib"},
@@ -61,6 +63,7 @@
 		{"file": "/stubs/ure.py", "module": "ure"},
 		{"file": "/stubs/uselect.py", "module": "uselect"},
 		{"file": "/stubs/usocket.py", "module": "usocket"},
+		{"file": "/stubs/ussl.py", "module": "ussl"},
 		{"file": "/stubs/ustruct.py", "module": "ustruct"},
 		{"file": "/stubs/utime.py", "module": "utime"},
 		{"file": "/stubs/utimeq.py", "module": "utimeq"},

@@ -34,13 +34,13 @@ led3 = sty.LED(3)
 # ---------------------------------------------------------------
 # NTRIP Client informations
 # ---------------------------------------------------------------
-server     = 'ntrip.stalya.com'
-port       = 2101
-username   = 'mcastillo@eps-works.com'
-password   = 'Nhx7tUPnv8eS9euY'
+server = 'ntrip.stalya.com'
+port = 2101
+username = 'mcastillo@eps-works.com'
+password = 'Nhx7tUPnv8eS9euY'
 mountpoint = 'STYIST0'
-authkey    = b64encode("{}:{}".format(username, password)).decode('utf-8')
-header     =\
+authkey = b64encode("{}:{}".format(username, password)).decode('utf-8')
+header =\
 "GET /{} HTTP/1.0\r\n".format(mountpoint) +\
 "User-Agent: NTRIP simpleRTK-SBC\r\n" +\
 "Accept: */*\r\n" +\
@@ -120,19 +120,20 @@ async def ntrip_proc():
     print('IMEI Number: %s' % nic.imei())
     print('IMSI Number: %s' % nic.imsi())
     qos = nic.qos()
-    print('Signal Quality: %d,%d' % (qos[0],qos[1]))
+    print('Signal Quality: %d,%d' % (qos[0], qos[1]))
 
     # Get the stream reader/writer while connwcto to the host
-    reader, writer = yield from asyncio.open_connection(server, port)
+    reader, writer = await asyncio.open_connection(server, port)
 
     # Send header data to the host
-    yield from writer.awrite(header)
+    writer.write(header)
+    await writer.drain()
 
     # Get data from the host
     try:
-        data = yield from reader.read(256)
+        data = await reader.read(256)
         print(data)
-    except Exception as e:
+    except Exception:
         print('Not response from server!\r\n')
 
     try:
@@ -145,7 +146,7 @@ async def ntrip_proc():
             # frame everything itself and bin the garbage as required.
 
             # Get the RTCM data from NTRIP caster
-            data = yield from reader.read(2048)
+            data = await reader.read(2048)
             print(data)
 
             # Check the received data length
@@ -153,13 +154,13 @@ async def ntrip_proc():
                 # Redirect it to the destination
                 zed1.send(data)
 
-    except Exception as e:
+    except Exception:
         print('Not response from server!\r\n')
     finally:
 
-        # Close the streams
-        reader.aclose()
-        writer.aclose()
+        # Close the stream
+        writer.close()
+        await writer.wait_closed()
 
         # Disconnect from the gsm network
         nic.disconnect()
@@ -182,8 +183,8 @@ async def msg_proc():
 async def main():
     asyncio.create_task(msg_proc())
     while True:
-        res = asyncio.create_task(ntrip_proc())
-        await asyncio.wait_for(res, 3600)
+        task = asyncio.create_task(ntrip_proc())
+        await asyncio.wait_for(task, 3600)
 
 if __name__ == "__main__":
     try:

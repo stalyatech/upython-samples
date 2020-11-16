@@ -46,3 +46,7 @@ class OneWire:
 class OneWireError:
     ''
 _ow = None
+
+
+def const():
+    pass

@@ -51,7 +51,6 @@ class GSM:
     def status():
         pass
 
-
 class LAN:
     ''
     def active():

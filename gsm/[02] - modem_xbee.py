@@ -1,9 +1,7 @@
-import utime
-import usocket
 import network
-import _thread
 from sty import Pin
 from sty import UART
+import uasyncio as asyncio
 
 # ---------------------------------------------------------------
 # Power-on the XBEE subsystem
@@ -30,19 +28,9 @@ pwr = Pin('PWR_XBEE_HP', Pin.OUT_OD)
 nic = network.GSM(UART('XBEE_HP', 115200, rxbuf=1024, dma=False), pwr_pin=pwr, info=True)
 
 # ---------------------------------------------------------------
-# GSM connection status callback
-# ---------------------------------------------------------------
-def OnGsmStatus(status):
-    print('Link : {}\r\nQoS  : {}\r\nBER  : {}'.format(status[0], status[1], status[2]))
-
-# ---------------------------------------------------------------
 # Main application process
 # ---------------------------------------------------------------
-def app_proc():
-
-    # Start up delay to allow REPL message
-    utime.sleep_ms(1000)
-
+async def app_proc(url, port):
     # Print info
     print('GSM connection started...\r\n')
 
@@ -50,11 +38,11 @@ def app_proc():
     nic.config(user='gprs', pwd='gprs', apn='internet', pin='1234')
 
     # Connect to the gsm network
-    nic.connect(OnGsmStatus)
+    nic.connect()
 
     # Wait till connection
     while not nic.isconnected():
-        utime.sleep_ms(10)
+        await asyncio.sleep_ms(100)
 
     # Status info
     ifconfig = nic.ifconfig()
@@ -64,40 +52,33 @@ def app_proc():
     print('IMEI Number: %s' % nic.imei())
     print('IMSI Number: %s' % nic.imsi())
     qos = nic.qos()
-    print('Signal Quality: %d,%d' % (qos[0],qos[1]))
+    print('Signal Quality: %d,%d' % (qos[0], qos[1]))
 
-    # Get the IP address of host
-    addr = usocket.getaddrinfo('ardusimple.com', 80)[0][-1]
-    print('Host: %s:%d' % (addr[0], addr[1]))
+    # Get the stream reader/writer while connwcto to the host
+    reader, writer = await asyncio.open_connection(url, port)
 
-    # Create the socket
-    sock = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
+    # Send header data to the host
+    print('Write GET')
+    writer.write(b'GET / HTTP/1.0\r\n\r\n')
+    await writer.drain()
 
-    # Connect to the host
-    sock.connect(addr)
-    print('Socket connected\r\n')
+    # Get the data
+    while True:
+        line = await reader.readline()
+        line = line.strip()
+        if not line:
+            break
+        if (line.find(b"Date") == -1 and line.find(b"Modified") == -1 and line.find(b"Server") == -1):
+            print(line)
 
-    # Send data to the host
-    sock.send(b'GET / HTTP/1.1\r\nHost: ardusimple.com\r\n\r\n')
-    print('Packet sent\r\n')
-
-    # Get data from the host
-    sock.settimeout(10.0)
-    try:
-        data = sock.recv(1000)
-        print(data)
-    except Exception as e:
-        print(e)
-
-    # Close the socket
-    sock.close()
-    print('Socket closed\r\n')
+    # Close the stream
+    print("Close")
+    writer.close()
+    await writer.wait_closed()
 
     # Disconnect from the gsm network
     nic.disconnect()
-
     print('This is simple socket application based on GSM NIC with CMUX support\r\n')
 
-if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+# Start the application process
+asyncio.run(app_proc('google.com', 80))

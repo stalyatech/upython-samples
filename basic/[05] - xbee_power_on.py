@@ -1,24 +1,10 @@
-from sty import Pin
+import machine
 
 # ---------------------------------------------------------------
-# Power-on the XBEE-LP subsystem of RTK board
+# Power-On the XBEE subsystem
 # ---------------------------------------------------------------
-
-# XBEE Low Power Socket
-xbee_lp_pwr = Pin('PWR_XBEE_LP', Pin.OUT_OD)
-xbee_lp_pwr.high()
-
-# XBEE High Power Socket
-xbee_hp_pwr = Pin('PWR_XBEE_HP', Pin.OUT_OD)
-xbee_hp_pwr.high()
-
-# XBEE Low Power Direction (XBEE_LP <-> FTDI)
-xbee_lp_dir = Pin('XBEE_LP_DIR', Pin.OUT_OD)
-xbee_lp_dir.low()
-
-# XBEE High Power Direction (XBEE_HP <-> FTDI)
-xbee_hp_dir = Pin('XBEE_HP_DIR', Pin.OUT_OD)
-xbee_hp_dir.low()
+pwr = machine.Power()
+pwr.on(machine.POWER_XBEE)
 
 # Console info
 print('XBEE Power-On')

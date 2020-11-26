@@ -1,14 +1,14 @@
 """
-Module: 'machine' on pySBC 1.13.0 with FW1.5.12-264
+Module: 'machine' on pySBC 1.13.0 with FW1.5.12-278
 """
-# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW1.5.12', version='v1.13-264-gb0c6ec5bb-dirty on 2020-11-25', machine='simpleRTK-SBC with STM32F745')
+# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW1.5.12', version='v1.13-278-gdb9b90e71-dirty on 2020-11-26', machine='simpleRTK-SBC-R02 with STM32H743')
 # Stubber: 1.3.4
 
 class ADC:
     ''
-    CORE_TEMP = 268435474
-    CORE_VBAT = 18
-    CORE_VREF = 17
+    CORE_TEMP = -880541696
+    CORE_VBAT = -950927360
+    CORE_VREF = -810024960
     VREF = 65535
     def read_u16():
         pass
@@ -57,29 +57,38 @@ class I2C:
     def writevto():
         pass
 
+POWER_GNSS = 0
+POWER_GSM = 4
+POWER_HUB = 5
+POWER_XBEE = 1
+POWER_XBEE_HP = 3
+POWER_XBEE_LP = 2
 PWRON_RESET = 1
 
 class Pin:
     ''
+    AF11_UART7 = 11
     AF1_TIM1 = 1
+    AF1_TIM16 = 1
+    AF1_TIM17 = 1
     AF1_TIM2 = 1
+    AF2_TIM12 = 2
     AF2_TIM3 = 2
     AF2_TIM4 = 2
     AF2_TIM5 = 2
-    AF3_TIM10 = 3
-    AF3_TIM11 = 3
     AF3_TIM8 = 3
-    AF3_TIM9 = 3
     AF4_I2C3 = 4
+    AF4_TIM15 = 4
+    AF4_USART1 = 4
+    AF6_UART4 = 6
+    AF7_UART7 = 7
     AF7_USART1 = 7
     AF7_USART2 = 7
     AF7_USART3 = 7
+    AF7_USART6 = 7
     AF8_UART4 = 8
-    AF8_UART7 = 8
     AF8_UART8 = 8
-    AF8_USART6 = 8
     AF9_CAN1 = 9
-    AF9_TIM12 = 9
     AF9_TIM13 = 9
     AF9_TIM14 = 9
     AF_OD = 18
@@ -88,8 +97,8 @@ class Pin:
     ALT_OPEN_DRAIN = 18
     ANALOG = 3
     IN = 0
-    IRQ_FALLING = 270598144
-    IRQ_RISING = 269549568
+    IRQ_FALLING = 287375360
+    IRQ_RISING = 286326784
     OPEN_DRAIN = 17
     OUT = 1
     OUT_OD = 17
@@ -157,6 +166,18 @@ class Pin:
         pass
 
 
+class Power:
+    ''
+    def off():
+        pass
+
+    def on():
+        pass
+
+    def stat():
+        pass
+
+
 class RTC:
     ''
     def calibration():
@@ -178,7 +199,7 @@ SOFT_RESET = 0
 
 class SPI:
     ''
-    LSB = 128
+    LSB = 8388608
     MSB = 0
     def deinit():
         pass
@@ -255,7 +276,7 @@ class SoftI2C:
 
 class SoftSPI:
     ''
-    LSB = 128
+    LSB = 8388608
     MSB = 0
     def deinit():
         pass

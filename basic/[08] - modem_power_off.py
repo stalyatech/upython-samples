@@ -1,10 +1,10 @@
-from sty import Pin
+import machine
 
 # ---------------------------------------------------------------
-# Power-Off the Modem subsystem of RTK board
+# Power-Off the Modem subsystem
 # ---------------------------------------------------------------
-modem_pwr = Pin('PWR_GSM', Pin.OUT_OD)
-modem_pwr.low()
+pwr = machine.Power()
+pwr.off(machine.POWER_GSM)
 
 # Console info
 print('Modem Power-Off')

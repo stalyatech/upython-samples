@@ -4,37 +4,24 @@ import _thread
 from sty import Pin
 from sty import UART
 
+# ---------------------------------------------------------------
 # SMS received callback
+# ---------------------------------------------------------------
 def OnSmsReceived(smsMsg):
     print(smsMsg)
-
-# ---------------------------------------------------------------
-# Power-on the XBEE subsystem
-# ---------------------------------------------------------------
-
-# XBEE Low Power Socket
-xbee_lp_pwr = Pin('PWR_XBEE_LP', Pin.OUT_OD)
-xbee_lp_pwr.high()
-
-# XBEE Low Power Direction (XBEE_LP <-> MCU)
-xbee_lp_dir = Pin('XBEE_LP_DIR', Pin.OUT_PP)
-xbee_lp_dir.high()
-
-# XBEE High Power Direction (XBEE_HP <-> MCU)
-xbee_hp_dir = Pin('XBEE_HP_DIR', Pin.OUT_PP)
-xbee_hp_dir.high()
 
 # ---------------------------------------------------------------
 # GSM Module Communication based socket interface (on XBEE-HP)
 # ---------------------------------------------------------------
 
 # Configure the network interface card (GSM)
-pwr = Pin('PWR_XBEE_HP', Pin.OUT_OD)
-nic = network.GSM(UART('XBEE_HP', 115200, rxbuf=1024, dma=False), pwr_pin=pwr, info=True)
+pwr = Pin('PWR_GSM', Pin.OUT_OD)
+mon = Pin('GSM_MON', Pin.IN, Pin.PULL_DOWN)
+nic = network.GSM(UART('GSM', 115200, flow=UART.RTS|UART.CTS, rxbuf=1024, dma=False), pwr_pin=pwr, mon_pin=mon, info=True)
 sms = nic.SMS(OnSmsReceived)
 
 # ---------------------------------------------------------------
-# Main application process
+# Application process
 # ---------------------------------------------------------------
 def app_proc():
 
@@ -69,7 +56,7 @@ def app_proc():
         utime.sleep_ms(10)
 
     # SMS send
-    sms.send('05551234567', 'Message from ardusimple.com')
+    sms.send('05335115360', 'Message from ardusimple.com')
 
     # Wait till SMS send
     while sms.isbusy():
@@ -90,6 +77,9 @@ def app_proc():
 
     print('This is simple SMS application based on GSM NIC with CMUX support\r\n')
 
+# ---------------------------------------------------------------
+# Application entry point
+# ---------------------------------------------------------------
 if __name__ == "__main__":
     # Start the application process
     _thread.start_new_thread(app_proc, ())

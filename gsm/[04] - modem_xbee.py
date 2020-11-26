@@ -4,31 +4,15 @@ from sty import UART
 import uasyncio as asyncio
 
 # ---------------------------------------------------------------
-# Power-on the XBEE subsystem
-# ---------------------------------------------------------------
-
-# XBEE Low Power Socket
-xbee_lp_pwr = Pin('PWR_XBEE_LP', Pin.OUT_OD)
-xbee_lp_pwr.high()
-
-# XBEE Low Power Direction (XBEE_LP <-> MCU)
-xbee_lp_dir = Pin('XBEE_LP_DIR', Pin.OUT_PP)
-xbee_lp_dir.high()
-
-# XBEE High Power Direction (XBEE_HP <-> MCU)
-xbee_hp_dir = Pin('XBEE_HP_DIR', Pin.OUT_PP)
-xbee_hp_dir.high()
-
-# ---------------------------------------------------------------
 # GSM Module Communication based socket interface (on XBEE-HP)
 # ---------------------------------------------------------------
 
 # Configure the network interface card (GSM)
-pwr = Pin('PWR_XBEE_HP', Pin.OUT_OD)
+pwr = Pin('PWR_XBEE', Pin.OUT_OD)
 nic = network.GSM(UART('XBEE_HP', 115200, rxbuf=1024, dma=False), pwr_pin=pwr, info=True)
 
 # ---------------------------------------------------------------
-# Main application process
+# Application process
 # ---------------------------------------------------------------
 async def app_proc(url, port):
     # Print info
@@ -80,5 +64,7 @@ async def app_proc(url, port):
     nic.disconnect()
     print('This is simple socket application based on GSM NIC with CMUX support\r\n')
 
+# ---------------------------------------------------------------
 # Start the application process
+# ---------------------------------------------------------------
 asyncio.run(app_proc('google.com', 80))

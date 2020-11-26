@@ -1,7 +1,7 @@
 """
-Module: 'sty' on pySBC 1.13.0 with FW1.5.12-264
+Module: 'sty' on pySBC 1.13.0 with FW1.5.12-278
 """
-# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW1.5.12', version='v1.13-264-gb0c6ec5bb-dirty on 2020-11-25', machine='simpleRTK-SBC with STM32F745')
+# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW1.5.12', version='v1.13-278-gdb9b90e71-dirty on 2020-11-26', machine='simpleRTK-SBC-R02 with STM32H743')
 # Stubber: 1.3.4
 
 class ADC:
@@ -37,17 +37,16 @@ class ADCAll:
 class CAN:
     ''
     BUS_OFF = 4
+    DUAL = 1
     ERROR_ACTIVE = 1
     ERROR_PASSIVE = 3
     ERROR_WARNING = 2
-    LIST16 = 1
-    LIST32 = 3
-    LOOPBACK = 67108864
-    MASK16 = 0
-    MASK32 = 2
+    LOOPBACK = 4
+    MASK = 2
     NORMAL = 0
-    SILENT = 134217728
-    SILENT_LOOPBACK = 201326592
+    RANGE = 0
+    SILENT = 2
+    SILENT_LOOPBACK = 3
     STOPPED = 0
     def any():
         pass
@@ -88,12 +87,12 @@ class CAN:
 
 class ExtInt:
     ''
-    EVT_FALLING = 270663680
-    EVT_RISING = 269615104
-    EVT_RISING_FALLING = 271712256
-    IRQ_FALLING = 270598144
-    IRQ_RISING = 269549568
-    IRQ_RISING_FALLING = 271646720
+    EVT_FALLING = 287440896
+    EVT_RISING = 286392320
+    EVT_RISING_FALLING = 288489472
+    IRQ_FALLING = 287375360
+    IRQ_RISING = 286326784
+    IRQ_RISING_FALLING = 288423936
     def disable():
         pass
 
@@ -240,25 +239,28 @@ class LED:
 
 class Pin:
     ''
+    AF11_UART7 = 11
     AF1_TIM1 = 1
+    AF1_TIM16 = 1
+    AF1_TIM17 = 1
     AF1_TIM2 = 1
+    AF2_TIM12 = 2
     AF2_TIM3 = 2
     AF2_TIM4 = 2
     AF2_TIM5 = 2
-    AF3_TIM10 = 3
-    AF3_TIM11 = 3
     AF3_TIM8 = 3
-    AF3_TIM9 = 3
     AF4_I2C3 = 4
+    AF4_TIM15 = 4
+    AF4_USART1 = 4
+    AF6_UART4 = 6
+    AF7_UART7 = 7
     AF7_USART1 = 7
     AF7_USART2 = 7
     AF7_USART3 = 7
+    AF7_USART6 = 7
     AF8_UART4 = 8
-    AF8_UART7 = 8
     AF8_UART8 = 8
-    AF8_USART6 = 8
     AF9_CAN1 = 9
-    AF9_TIM12 = 9
     AF9_TIM13 = 9
     AF9_TIM14 = 9
     AF_OD = 18
@@ -267,8 +269,8 @@ class Pin:
     ALT_OPEN_DRAIN = 18
     ANALOG = 3
     IN = 0
-    IRQ_FALLING = 270598144
-    IRQ_RISING = 269549568
+    IRQ_FALLING = 287375360
+    IRQ_RISING = 286326784
     OPEN_DRAIN = 17
     OUT = 1
     OUT_OD = 17
@@ -384,8 +386,8 @@ class SDCard:
 
 class SPI:
     ''
-    LSB = 128
-    MASTER = 260
+    LSB = 8388608
+    MASTER = 4194304
     MSB = 0
     SLAVE = 0
     def deinit():

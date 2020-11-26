@@ -2,12 +2,15 @@ import os
 import _thread
 
 # ---------------------------------------------------------------
-# Main application process
+# Application process
 # ---------------------------------------------------------------
 def app_proc():
     print(os.listdir())
     print(os.listdir('sub_directory'))
 
-# Start the application process
+# ---------------------------------------------------------------
+# Application entry point
+# ---------------------------------------------------------------
 if __name__ == "__main__":
+    # Start the application process
     _thread.start_new_thread(app_proc, ())

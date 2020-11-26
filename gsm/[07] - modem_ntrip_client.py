@@ -1,5 +1,6 @@
 import binascii
 import network
+import machine
 import sty
 from sty import Pin
 from sty import UART
@@ -15,8 +16,7 @@ def OnUbloxMsg(uart, ubxMsg):
 # GNSS UBX message parsed callback
 # ---------------------------------------------------------------
 def OnUbloxParsed(msgType, msgItems):
-    print(msgType)
-    print(msgItems)
+    print(msgType, msgItems)
 
 # ---------------------------------------------------------------
 # Base64 encoding
@@ -48,28 +48,8 @@ header =\
 "Connection: close\r\n\r\n"
 
 # ---------------------------------------------------------------
-# Power-on the XBEE subsystem
-# ---------------------------------------------------------------
-
-# XBEE Low Power Socket
-xbee_lp_pwr = Pin('PWR_XBEE_LP', Pin.OUT_OD)
-xbee_lp_pwr.high()
-
-# XBEE Low Power Direction (XBEE_LP <-> MCU)
-xbee_lp_dir = Pin('XBEE_LP_DIR', Pin.OUT_PP)
-xbee_lp_dir.high()
-
-# XBEE High Power Direction (XBEE_HP <-> MCU)
-xbee_hp_dir = Pin('XBEE_HP_DIR', Pin.OUT_PP)
-xbee_hp_dir.high()
-
-# ---------------------------------------------------------------
 # GNSS Modules
 # ---------------------------------------------------------------
-
-# Power-on the GNSS subsystem
-gnss_pwr = Pin('PWR_GNSS', Pin.OUT_OD)
-gnss_pwr.high()
 
 # UART configuration of ZEDs with application buffer
 zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
@@ -82,7 +62,7 @@ zed1.parser(UART.ParserUBX, rxbuf=2048, rxcallback=OnUbloxMsg, frcallback=OnUblo
 # ---------------------------------------------------------------
 
 # Configure the network interface card (GSM)
-pwr = Pin('PWR_XBEE_HP', Pin.OUT_OD)
+pwr = Pin('PWR_XBEE', Pin.OUT_OD)
 nic = network.GSM(UART('XBEE_HP', 115200, rxbuf=1024, dma=False), pwr_pin=pwr, info=True)
 
 # ---------------------------------------------------------------
@@ -186,6 +166,9 @@ async def main():
         task = asyncio.create_task(ntrip_proc())
         await asyncio.wait_for(task, 3600)
 
+# ---------------------------------------------------------------
+# Application entry point
+# ---------------------------------------------------------------
 if __name__ == "__main__":
     try:
         loop = asyncio.get_event_loop()

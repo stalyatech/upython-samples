@@ -22,7 +22,9 @@ print('IMU sensor configured')
 # Create the filter class
 ahrs = imu.DCM(yawfix=True, kp_rollpitch=0.2, ki_rollpitch=0.00005, kp_yaw=1.2, ki_yaw=0.00005)
 
-# Main application process
+# ---------------------------------------------------------------
+# Application process
+# ---------------------------------------------------------------
 def app_proc():
     while True:
         # Read the unfiltered values
@@ -31,6 +33,9 @@ def app_proc():
         # Update the filtered values (DCM algorithm)
         printRollPitchYaw(ahrs.update(vals, 0), vals[sty.Imu.DT])
 
-# Start the application process
+# ---------------------------------------------------------------
+# Application entry point
+# ---------------------------------------------------------------
 if __name__ == "__main__":
+    # Start the application process
     _thread.start_new_thread(app_proc, ())

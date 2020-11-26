@@ -1,10 +1,10 @@
-from sty import Pin
+import machine
 
 # ---------------------------------------------------------------
-# Power-On the GNSS subsystem of RTK board
+# Power-On the GNSS subsystem
 # ---------------------------------------------------------------
-gnss_pwr = Pin('PWR_GNSS', Pin.OUT_OD)
-gnss_pwr.high()
+pwr = machine.Power()
+pwr.on(machine.POWER_GNSS)
 
 # Console info
 print('GNSS Power-On')

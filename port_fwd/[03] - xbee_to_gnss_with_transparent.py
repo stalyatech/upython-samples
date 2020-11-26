@@ -1,7 +1,7 @@
-from sty import Pin
-from sty import UART
 import sty
+import machine
 import _thread
+from sty import UART
 
 # ---------------------------------------------------------------
 # On-Board LEDs
@@ -15,41 +15,41 @@ led3 = sty.LED(3)
 # GNSS Modules
 # ---------------------------------------------------------------
 
-# Power-on the GNSS subsystem
-gnss_pwr = Pin('PWR_GNSS', Pin.OUT_PP)
-gnss_pwr.high()
+# Power-On the GNSS subsystem
+pwr = machine.Power()
+pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZEDs
-zed1_uart = UART('ZED1', 115200, rxbuf=0, dma=True)
-zed2_uart = UART('ZED2', 115200, rxbuf=0, dma=True)
-zed3_uart = UART('ZED3', 115200, rxbuf=0, dma=True)
+zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
+zed2 = UART('ZED2', 115200, rxbuf=0, dma=True)
+zed3 = UART('ZED3', 115200, rxbuf=0, dma=True)
 
 # ---------------------------------------------------------------
 # XBEE Expansions
 # ---------------------------------------------------------------
 
-# Power-on the XBEE LP subsystem
-xlp_pwr = Pin('PWR_XBEE_LP', Pin.OUT_PP)
-xlp_pwr.high()
-
-# Re-direct the XBEE LP subsystem to the MCU
-xlp_dir = Pin('XBEE_LP_DIR', Pin.OUT_PP)
-xlp_dir.high()
+# Power-On the XBEE subsystem
+pwr.on(machine.POWER_XBEE)
 
 # XBEE LP UART configuration
-xlp_uart = UART('XBEE_LP', 115200, rxbuf=0, dma=False)
+xbee_lp = UART('XBEE_LP', 115200, rxbuf=0, dma=False)
 
 # Hardware connection of ports
-# (xlp_uart -> zed1_uart)
-# (xlp_uart -> zed2_uart)
-# (xlp_uart -> zed3_uart)
-xlp_uart.connect(obj1=zed1_uart)
+# (xbee_lp -> zed1)
+# (xbee_lp -> zed2)
+# (xbee_lp -> zed3)
+xbee_lp.connect(obj1=zed1)
 
-# Main application process
+# ---------------------------------------------------------------
+# Application process
+# ---------------------------------------------------------------
 def app_proc():
     while True:
         pass
 
+# ---------------------------------------------------------------
+# Application entry point
+# ---------------------------------------------------------------
 if __name__ == "__main__":
     # Start the application process
     _thread.start_new_thread(app_proc, ())

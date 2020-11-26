@@ -1,7 +1,7 @@
 import _thread
 
 # ---------------------------------------------------------------
-# Main application process
+# Application process
 # ---------------------------------------------------------------
 def app_proc():
     # Open the test file
@@ -16,6 +16,9 @@ def app_proc():
         fp.close()
     print('End of file')
 
-# Start the application process
+# ---------------------------------------------------------------
+# Application entry point
+# ---------------------------------------------------------------
 if __name__ == "__main__":
+    # Start the application process
     _thread.start_new_thread(app_proc, ())

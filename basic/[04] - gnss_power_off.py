@@ -1,10 +1,10 @@
-from sty import Pin
+import machine
 
 # ---------------------------------------------------------------
-# Power-Off the GNSS subsystem of RTK board
+# Power-Off the GNSS subsystem
 # ---------------------------------------------------------------
-gnss_pwr = Pin('PWR_GNSS', Pin.OUT_OD)
-gnss_pwr.low()
+pwr = machine.Power()
+pwr.off(machine.POWER_GNSS)
 
 # Console info
 print('GNSS Power-Off')

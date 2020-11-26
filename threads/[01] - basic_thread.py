@@ -43,6 +43,9 @@ async def main():
     loop = asyncio.get_event_loop()
     loop.run_forever()
 
+# ---------------------------------------------------------------
+# Application entry point
+# ---------------------------------------------------------------
 if __name__ == "__main__":
     try:
         asyncio.run(main())

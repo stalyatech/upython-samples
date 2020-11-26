@@ -1,6 +1,6 @@
-from sty import Pin
-from sty import UART
+import machine
 import _thread
+from sty import UART
 
 # ---------------------------------------------------------------
 # GNSS UBX message received callback
@@ -20,21 +20,26 @@ def OnUbloxParsed(msgType, msgItems):
 # ---------------------------------------------------------------
 
 # Power-on the GNSS subsystem
-gnss_pwr = Pin('PWR_GNSS', Pin.OUT_OD)
-gnss_pwr.high()
+pwr = machine.Power()
+pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZED with application buffer
-zed1_uart = UART('ZED1', 115200, rxbuf=0, dma=False)
+zed1 = UART('ZED1', 115200, rxbuf=0, dma=False)
 
 # Parser configurations
-zed1_uart.parser(UART.ParserUBX, rxbuf=2048, rxcallback=OnUbloxMsg, frcallback=OnUbloxParsed)
+zed1.parser(UART.ParserUBX, rxbuf=2048, rxcallback=OnUbloxMsg, frcallback=OnUbloxParsed)
 
-# Main application process
+# ---------------------------------------------------------------
+# Application process
+# ---------------------------------------------------------------
 def app_proc():
     while True:
         # Call the UBX framer processor
-        zed1_uart.process(UART.ParserUBX)
+        zed1.process(UART.ParserUBX)
 
+# ---------------------------------------------------------------
+# Application entry point
+# ---------------------------------------------------------------
 if __name__ == "__main__":
     # Start the application process
     _thread.start_new_thread(app_proc, ())

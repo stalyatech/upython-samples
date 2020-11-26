@@ -1,7 +1,7 @@
 from machine import WDT
 
 # Enable the watchdog timer with a timeout of 3s
-wdt = WDT(timeout=5000)
+wdt = WDT(timeout=3000)
 wdt.feed()
 
 # Print info

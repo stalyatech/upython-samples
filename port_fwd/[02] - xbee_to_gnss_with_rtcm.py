@@ -16,7 +16,7 @@ led3 = sty.LED(3)
 # ---------------------------------------------------------------
 
 # Power-on the GNSS subsystem
-gnss_pwr = Pin('PWR_GNSS', Pin.OUT_PP)
+gnss_pwr = Pin('PWR_GNSS', Pin.OUT_OD)
 gnss_pwr.high()
 
 # UART configuration of ZEDs

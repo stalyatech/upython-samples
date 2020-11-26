@@ -11,10 +11,8 @@ from sty import UART
 
 # Configure the network interface card (GSM)
 pwr = Pin('PWR_GSM', Pin.OUT_OD)
-pon = Pin('M2M_PON', Pin.OUT_OD)
-rst = Pin('M2M_RST', Pin.OUT_OD)
-mon = Pin('M2M_MON', Pin.IN)
-nic = network.GSM(UART('GSM', 115200, flow=UART.RTS|UART.CTS, rxbuf=1024, dma=False), pwr_pin=pwr, pon_pin=pon, rst_pin=rst, mon_pin=mon, info=True)
+mon = Pin('GSM_MON', Pin.IN, Pin.PULL_DOWN)
+nic = network.GSM(UART('GSM', 115200, flow=UART.RTS|UART.CTS, rxbuf=1024, dma=False), pwr_pin=pwr, mon_pin=mon, info=True)
 
 # ---------------------------------------------------------------
 # Main application process

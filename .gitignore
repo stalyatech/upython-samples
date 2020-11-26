@@ -1,3 +1,15 @@
+# Ardusimple files
+######################
+ardusimple/
+
+# IoT files
+######################
+iot/
+
+# PLC files
+######################
+plc/
+
 # VS Code files
 ######################
 .vscode/

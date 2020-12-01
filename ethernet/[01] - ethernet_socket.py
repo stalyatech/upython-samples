@@ -4,11 +4,20 @@ import network
 import _thread
 
 # ---------------------------------------------------------------
+# Link status change callback
+# ---------------------------------------------------------------
+def LinkStatusCB(link):
+    if link:
+        print('Link is up')
+    else:
+        print('Link is down')
+
+# ---------------------------------------------------------------
 # Ethernet based socket interface
 # ---------------------------------------------------------------
 
 # Configure the network interface card (Ethernet)
-nic = network.LAN()
+nic = network.LAN(LinkStatusCB)
 
 # ---------------------------------------------------------------
 # Main application process
@@ -21,13 +30,17 @@ def app_proc():
     # Activate the interface
     nic.active(True)
 
+    # Wait for ethernet link up
+    while nic.status() == 0:
+        utime.sleep_ms(100)
+
     # DHCP config
-    nic.ifconfig('dhcp')
-    ifconfig = nic.ifconfig()
-    print('DHCP done: %s' % ifconfig[0])
+    nic.ifconfig(mode='dhcp')
+    ipaddr = nic.ifconfig('ipaddr')
+    print('DHCP done: %s' % ipaddr)
 
     # Get the IP address of host
-    addr = usocket.getaddrinfo('ardusimple.com', 80)[0][-1]
+    addr = usocket.getaddrinfo('google.com', 80)[0][-1]
     print('Host: %s:%d' % (addr[0], addr[1]))
 
     # Create the socket
@@ -38,7 +51,7 @@ def app_proc():
     print('Socket connected\r\n')
 
     # Send data to the host
-    sock.send(b'GET / HTTP/1.1\r\nHost: ardusimple.com\r\n\r\n')
+    sock.send(b'GET / HTTP/1.0\r\n\r\n')
     print('Packet sent\r\n')
 
     # Get data from the host

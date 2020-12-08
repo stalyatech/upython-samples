@@ -1,6 +1,6 @@
 import os
-import sty
 import time
+import sty
 import machine
 
 # 1st FAT partition (1MB)

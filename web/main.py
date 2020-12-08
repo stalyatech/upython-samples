@@ -4,9 +4,6 @@ from MicroWebSrv2  import *
 from time          import sleep
 from _thread       import allocate_lock
 from network       import LAN
-from network       import GSM
-from sty           import Pin
-from sty           import UART
 
 # ============================================================================
 # ============================================================================
@@ -145,49 +142,22 @@ def OnWSChatClosed(webSocket) :
 # ============================================================================
 # ============================================================================
 
-# Select the network interface
-# 0 : Ethernet
-# 1 : GSM
-nic_if = 0
+# Configure the network interface card (Ethernet)
+nic = LAN()
 
-if nic_if == 0:
-    # Configure the network interface card (Ethernet)
-    nic = LAN()
+# Activate the interface
+nic.active(True)
 
-    # Activate the interface
-    nic.active(True)
+# Wait for ethernet link up
+while nic.status() == 0:
+    sleep(1)
 
-    # Wait for ethernet link up
-    while nic.status() == 0:
-        sleep(1)
+# Configure the DHCP client
+nic.ifconfig(mode='dhcp')
 
-    # Configure the DHCP client
-    nic.ifconfig(mode='dhcp')
-
-    # Status info
-    ipaddr = nic.ifconfig('ipaddr')
-    print('DHCP done: %s' % ipaddr)
-else:
-    # Configure the network interface card (GSM)
-    pwr = Pin('PWR_GSM', Pin.OUT_OD)
-    mon = Pin('GSM_MON', Pin.IN, Pin.PULL_DOWN)
-    nic = GSM(UART('GSM', 115200, flow=UART.RTS|UART.CTS, rxbuf=1024, dma=False), pwr_pin=pwr, mon_pin=mon, info=True)
-
-    # Configure the GSM parameters
-    nic.config(user='gprs', pwd='gprs', apn='internet', pin='1234')
-
-    # Connect to the gsm network
-    nic.connect()
-
-    # Wait till connection
-    while not nic.isconnected():
-        sleep(1)
-
-    # Status info
-    ipaddr = nic.ifconfig('ipaddr')
-    print('GSM connection done: %s' % ipaddr)
-
-print()
+# Status info
+ipaddr = nic.ifconfig('ipaddr')
+print('DHCP done: %s\r\n' % ipaddr)
 
 # Loads the PyhtmlTemplate module globally and configure it,
 pyhtmlMod = MicroWebSrv2.LoadModule('PyhtmlTemplate')

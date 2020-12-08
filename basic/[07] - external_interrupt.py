@@ -5,4 +5,4 @@ def OnExtInt(line):
     print('line=', line)
 
 # Configure the external interrupt
-extint = ExtInt(Pin('DIN1'), ExtInt.IRQ_FALLING, Pin.PULL_NONE, OnExtInt)
+extint = ExtInt(Pin('IP0'), ExtInt.IRQ_RISING, Pin.PULL_NONE, OnExtInt)

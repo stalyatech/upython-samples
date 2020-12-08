@@ -7,9 +7,9 @@ micropython.alloc_emergency_exception_buf(100)
 # On-Board LEDs
 # ---------------------------------------------------------------
 
-led1 = sty.LED(1)
-led2 = sty.LED(2)
-led3 = sty.LED(3)
+led1 = sty.LEDEX(7)
+led2 = sty.LEDEX(8)
+led3 = sty.LEDEX(9)
 
 # ---------------------------------------------------------------
 # Something calculation functions

@@ -1,7 +1,7 @@
 import os
-import sty
 import time
 import machine
+import sty
 
 # FAT partition for all flash
 p = sty.Flash(start=0)

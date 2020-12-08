@@ -1,7 +1,7 @@
 """
-Module: 'machine' on pySBC 1.13.0 with FW1.5.12-278
+Module: 'machine' on pyPLC 1.13.0 with FW1.0.0-284
 """
-# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW1.5.12', version='v1.13-278-gdb9b90e71-dirty on 2020-11-26', machine='simpleRTK-SBC-R02 with STM32H743')
+# MCU: (sysname='pyPLC', nodename='pyPLC', release='1.13.0 with FW1.0.0', version='v1.13-284-gcba2448b7-dirty on 2020-12-01', machine='smartPLC with STM32H743')
 # Stubber: 1.3.4
 
 class ADC:
@@ -57,17 +57,12 @@ class I2C:
     def writevto():
         pass
 
-POWER_GNSS = 0
-POWER_GSM = 4
-POWER_HUB = 5
-POWER_XBEE = 1
-POWER_XBEE_HP = 3
-POWER_XBEE_LP = 2
+POWER_ETHER = 6
+POWER_OTG = 7
 PWRON_RESET = 1
 
 class Pin:
     ''
-    AF11_UART7 = 11
     AF1_TIM1 = 1
     AF1_TIM16 = 1
     AF1_TIM17 = 1
@@ -77,17 +72,10 @@ class Pin:
     AF2_TIM4 = 2
     AF2_TIM5 = 2
     AF3_TIM8 = 3
-    AF4_I2C3 = 4
+    AF4_I2C1 = 4
     AF4_TIM15 = 4
-    AF4_USART1 = 4
-    AF6_UART4 = 6
-    AF7_UART7 = 7
-    AF7_USART1 = 7
     AF7_USART2 = 7
     AF7_USART3 = 7
-    AF7_USART6 = 7
-    AF8_UART4 = 8
-    AF8_UART8 = 8
     AF9_CAN1 = 9
     AF9_TIM13 = 9
     AF9_TIM14 = 9

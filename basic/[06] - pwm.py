@@ -5,13 +5,11 @@ from sty import Pin, Timer
 # ---------------------------------------------------------------
 
 # QP1 has TIM4 CH1
-PWM1 = Pin('QP1')
+PWM1 = Pin('QP0')
 # QP1 has TIM4 CH2
-PWM2 = Pin('QP2')
+PWM2 = Pin('QP1')
 # QP1 has TIM4 CH3
-PWM3 = Pin('QP3')
-# QP1 has TIM4 CH4
-PWM4 = Pin('QP4')
+PWM3 = Pin('QP2')
 
 # PWM Timer
 tim = Timer(4, freq=1000)

@@ -4,8 +4,8 @@ import sty
 # ---------------------------------------------------------------
 # Analog Inputs
 # ---------------------------------------------------------------
-adc0 = sty.ADC(sty.Pin.board.VAIN1)
-adc1 = sty.ADC(sty.Pin.board.VAIN2)
+adc0 = sty.ADC(sty.Pin.board.AINP)
+adc1 = sty.ADC(sty.Pin.board.AINN)
 
 # Create timer
 tim = sty.Timer(8, freq=100)

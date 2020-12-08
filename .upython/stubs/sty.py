@@ -1,7 +1,7 @@
 """
-Module: 'sty' on pySBC 1.13.0 with FW1.5.12-278
+Module: 'sty' on pyPLC 1.13.0 with FW1.0.0-284
 """
-# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW1.5.12', version='v1.13-278-gdb9b90e71-dirty on 2020-11-26', machine='simpleRTK-SBC-R02 with STM32H743')
+# MCU: (sysname='pyPLC', nodename='pyPLC', release='1.13.0 with FW1.0.0', version='v1.13-284-gcba2448b7-dirty on 2020-12-01', machine='smartPLC with STM32H743')
 # Stubber: 1.3.4
 
 class ADC:
@@ -121,17 +121,6 @@ class Flash:
         pass
 
 
-class Hub:
-    ''
-    USB_HUB_F9H1_PORT = 2
-    USB_HUB_F9H2_PORT = 6
-    USB_HUB_F9P_PORT = 1
-    USB_HUB_GSM_PORT = 4
-    USB_HUB_XBEE_PORT = 5
-    def portconfig():
-        pass
-
-
 class I2C:
     ''
     MASTER = 0
@@ -161,68 +150,7 @@ class I2C:
         pass
 
 
-class Imu:
-    ''
-    ACCEL_X = 0
-    ACCEL_Y = 1
-    ACCEL_Z = 2
-    DCM = None
-    DT = 6
-    GYRO_X = 3
-    GYRO_Y = 4
-    GYRO_Z = 5
-    Madgwick = None
-    Mahony = None
-    def ax():
-        pass
-
-    def ay():
-        pass
-
-    def az():
-        pass
-
-    def gx():
-        pass
-
-    def gy():
-        pass
-
-    def gz():
-        pass
-
-    def read():
-        pass
-
-    def read_accel():
-        pass
-
-    def read_gyro():
-        pass
-
-    def stat():
-        pass
-
-    def temp():
-        pass
-
-    def write_accel():
-        pass
-
-    def write_gyro():
-        pass
-
-    def wx():
-        pass
-
-    def wy():
-        pass
-
-    def wz():
-        pass
-
-
-class LED:
+class LEDEX:
     ''
     def intensity():
         pass
@@ -239,7 +167,6 @@ class LED:
 
 class Pin:
     ''
-    AF11_UART7 = 11
     AF1_TIM1 = 1
     AF1_TIM16 = 1
     AF1_TIM17 = 1
@@ -249,17 +176,10 @@ class Pin:
     AF2_TIM4 = 2
     AF2_TIM5 = 2
     AF3_TIM8 = 3
-    AF4_I2C3 = 4
+    AF4_I2C1 = 4
     AF4_TIM15 = 4
-    AF4_USART1 = 4
-    AF6_UART4 = 6
-    AF7_UART7 = 7
-    AF7_USART1 = 7
     AF7_USART2 = 7
     AF7_USART3 = 7
-    AF7_USART6 = 7
-    AF8_UART4 = 8
-    AF8_UART8 = 8
     AF9_CAN1 = 9
     AF9_TIM13 = 9
     AF9_TIM14 = 9
@@ -353,34 +273,6 @@ class RTC:
         pass
 
     def wakeup():
-        pass
-
-SD = None
-
-class SDCard:
-    ''
-    def info():
-        pass
-
-    def ioctl():
-        pass
-
-    def power():
-        pass
-
-    def present():
-        pass
-
-    def read():
-        pass
-
-    def readblocks():
-        pass
-
-    def write():
-        pass
-
-    def writeblocks():
         pass
 
 

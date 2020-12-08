@@ -3,11 +3,11 @@ import sty
 import time
 import machine
 
-# 1st FAT partition (1MB)
-p1 = sty.Flash(start=0, len=1024*1024)
+# 1st FAT partition (2MB)
+p1 = sty.Flash(start=0, len=2*1024*1024)
 
-# 2nd LittleFS partition (15MB)
-p2 = sty.Flash(start=1024*1024)
+# 2nd LittleFS partition (14MB)
+p2 = sty.Flash(start=2*1024*1024)
 
 # Make the FAT partition
 os.VfsFat.mkfs(p1)

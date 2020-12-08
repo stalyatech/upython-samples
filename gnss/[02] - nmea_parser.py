@@ -25,7 +25,7 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZEDs without application buffer
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
+zed1 = UART('ZED1', 115200, rxbuf=0, dma=False)
 
 # Parser configuration
 zed1.parser(UART.ParserNMEA, rxbuf=256, rxcallback=OnNmeaMsg, frcallback=OnParsedMsg)

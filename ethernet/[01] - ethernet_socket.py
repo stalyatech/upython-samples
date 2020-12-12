@@ -18,16 +18,28 @@ def app_proc():
     # Start up delay to allow REPL message
     utime.sleep_ms(1000)
 
+    # Print info
+    print('\r\nWaiting for link-up')
+
     # Activate the interface
     nic.active(True)
 
-    # DHCP config
-    nic.ifconfig('dhcp')
-    ifconfig = nic.ifconfig()
-    print('DHCP done: %s' % ifconfig[0])
+    # Wait for ethernet link up
+    while nic.status() == 0:
+        utime.sleep(1)
+
+    # Print info
+    print('DHCP started')
+
+    # Configure the DHCP client
+    nic.ifconfig(mode='dhcp')
+
+    # Status info
+    ipaddr = nic.ifconfig('ipaddr')
+    print('DHCP done: %s\r\n' % ipaddr)
 
     # Get the IP address of host
-    addr = usocket.getaddrinfo('ardusimple.com', 80)[0][-1]
+    addr = usocket.getaddrinfo('google.com', 80)[0][-1]
     print('Host: %s:%d' % (addr[0], addr[1]))
 
     # Create the socket
@@ -35,7 +47,7 @@ def app_proc():
 
     # Connect to the host
     sock.connect(addr)
-    print('Socket connected\r\n')
+    print('Socket connected')
 
     # Send data to the host
     sock.send(b'GET / HTTP/1.1\r\nHost: ardusimple.com\r\n\r\n')
@@ -51,10 +63,13 @@ def app_proc():
 
     # Close the socket
     sock.close()
-    print('Socket closed\r\n')
+    print('\r\nSocket closed')
+
+    # Deactivate the interface
+    nic.active(False)
 
     # Info
-    print('This is simple socket application based on Ethernet NIC\r\n')
+    print('\r\nThis is simple socket application based on Ethernet NIC')
 
 if __name__ == "__main__":
     # Start the application process

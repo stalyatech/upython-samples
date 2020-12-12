@@ -2,7 +2,6 @@ import binascii
 import network
 import machine
 import sty
-from sty import Pin
 from sty import UART
 import uasyncio as asyncio
 
@@ -55,31 +54,18 @@ header =\
 pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
-# UART configuration of ZEDs without application buffer
+# UART configuration of ZEDs with application buffer
 zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
 
 # Parser configurations
 zed1.parser(UART.ParserUBX, rxbuf=2048, rxcallback=OnUbloxMsg, frcallback=OnUbloxParsed)
 
 # ---------------------------------------------------------------
-# GSM Module Communication based socket interface
+# Ethernet based socket interface
 # ---------------------------------------------------------------
-use_xbee_modem = False
 
-# Configure the network interface card (GSM)
-if use_xbee_modem:
-    pwr = Pin('PWR_XBEE', Pin.OUT_OD)
-    nic = network.GSM(UART('XBEE_HP', 115200, rxbuf=2048, dma=False), pwr_pin=pwr, info=True)
-else:
-    pwr = Pin('PWR_GSM', Pin.OUT_OD)
-    mon = Pin('GSM_MON', Pin.IN, Pin.PULL_DOWN)
-    nic = network.GSM(UART('GSM', 115200, flow=UART.RTS|UART.CTS, rxbuf=2048, dma=False), pwr_pin=pwr, mon_pin=mon, info=True)
-
-# ---------------------------------------------------------------
-# GSM connection status callback
-# ---------------------------------------------------------------
-def OnGsmStatus(status):
-    print('Link : {}\r\nQoS  : {}\r\nBER  : {}'.format(status[0], status[1], status[2]))
+# Configure the network interface card (Ethernet)
+nic = network.LAN()
 
 # ---------------------------------------------------------------
 # NTRIP client processor
@@ -90,27 +76,24 @@ async def ntrip_proc():
     global port
 
     # Print info
-    print('GSM connection started...\r\n')
+    print('\r\nWaiting for link-up')
 
-    # Configure the GSM parameters
-    nic.config(user='gprs', pwd='gprs', apn='internet', pin='1234')
+    # Activate the interface
+    nic.active(True)
 
-    # Connect to the gsm network
-    nic.connect(OnGsmStatus)
-
-    # Wait till connection
-    while not nic.isconnected():
+    # Wait for ethernet link up
+    while nic.status() == 0:
         await asyncio.sleep_ms(100)
+
+    # Print info
+    print('DHCP started')
+
+    # Configure the DHCP client and get IP address
+    nic.ifconfig(mode='dhcp')
 
     # Status info
     ipaddr = nic.ifconfig('ipaddr')
-    print('GSM connection done: %s' % ipaddr)
-
-    # GSM info
-    print('IMEI Number: %s' % nic.imei())
-    print('IMSI Number: %s' % nic.imsi())
-    qos = nic.qos()
-    print('Signal Quality: %d,%d' % (qos[0], qos[1]))
+    print('DHCP done: %s\r\n' % ipaddr)
 
     # Get the stream reader/writer while connect to the host
     reader, writer = await asyncio.open_connection(server, port)
@@ -142,7 +125,6 @@ async def ntrip_proc():
             if len(data) > 0 and not zed1.istxbusy():
                 # Redirect it to the destination without blocking
                 zed1.send(data)
-                print(len(data))
 
     except Exception:
         print('Not response from server!\r\n')
@@ -152,8 +134,8 @@ async def ntrip_proc():
         writer.close()
         await writer.wait_closed()
 
-        # Disconnect from the gsm network
-        nic.disconnect()
+        # Deactivate the interface
+        nic.active(False)
 
 # ---------------------------------------------------------------
 # Message processor

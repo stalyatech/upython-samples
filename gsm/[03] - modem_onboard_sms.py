@@ -39,11 +39,11 @@ def app_proc():
 
     # Wait till connection
     while not nic.isconnected():
-        utime.sleep_ms(10)
+        utime.sleep_ms(100)
 
     # Status info
-    ifconfig = nic.ifconfig()
-    print('GSM connection done: %s' % ifconfig[0])
+    ipaddr = nic.ifconfig('ipaddr')
+    print('GSM connection done: %s' % ipaddr)
 
     # GSM info
     print('IMEI Number: %s' % nic.imei())
@@ -53,14 +53,14 @@ def app_proc():
 
     # Wait till SMS idle
     while sms.isbusy():
-        utime.sleep_ms(10)
+        utime.sleep_ms(100)
 
     # SMS send
-    sms.send('05335115360', 'Message from ardusimple.com')
+    sms.send('05335115360', 'Message from stalya.com')
 
     # Wait till SMS send
     while sms.isbusy():
-        utime.sleep_ms(10)
+        utime.sleep_ms(100)
 
     # Status info
     if sms.iserror():

@@ -67,9 +67,11 @@ async def thread1_proc():
     while True:
         # ZED1 NMEA framer processor
         zed1_uart.process(UART.ParserNMEA)
+        fp1.flush()
 
         # ZED2 NMEA framer processor
         zed2_uart.process(UART.ParserNMEA)
+        fp2.flush()
 
         # Yield to the other tasks
         await asyncio.sleep_ms(10)

@@ -1,4 +1,4 @@
-import uasyncio as asyncio
+import uasyncio
 from sty import LED
 
 # ---------------------------------------------------------------
@@ -15,7 +15,7 @@ led3 = LED(3)
 async def thread1_proc():
     while True:
         led1.toggle()
-        await asyncio.sleep_ms(100)
+        await uasyncio.sleep_ms(100)
 
 # ---------------------------------------------------------------
 # Thread #2 process
@@ -23,7 +23,7 @@ async def thread1_proc():
 async def thread2_proc():
     while True:
         led2.toggle()
-        await asyncio.sleep_ms(200)
+        await uasyncio.sleep_ms(200)
 
 # ---------------------------------------------------------------
 # Thread #3 process
@@ -31,16 +31,16 @@ async def thread2_proc():
 async def thread3_proc():
     while True:
         led3.toggle()
-        await asyncio.sleep_ms(300)
+        await uasyncio.sleep_ms(300)
 
 # ---------------------------------------------------------------
 # Main process
 # ---------------------------------------------------------------
 async def main():
-    asyncio.create_task(thread1_proc())
-    asyncio.create_task(thread2_proc())
-    asyncio.create_task(thread3_proc())
-    loop = asyncio.get_event_loop()
+    uasyncio.create_task(thread1_proc())
+    uasyncio.create_task(thread2_proc())
+    uasyncio.create_task(thread3_proc())
+    loop = uasyncio.get_event_loop()
     loop.run_forever()
 
 # ---------------------------------------------------------------
@@ -48,8 +48,8 @@ async def main():
 # ---------------------------------------------------------------
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        uasyncio.run(main())
     except KeyboardInterrupt:
         print('Interrupted')
     finally:
-        asyncio.new_event_loop()
+        uasyncio.new_event_loop()

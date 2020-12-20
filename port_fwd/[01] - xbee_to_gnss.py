@@ -15,32 +15,41 @@ led3 = sty.LED(3)
 # ZED1 message received callback
 # It is called from ISR!!!
 # Don't waste the CPU processing time.
+# params[0] : UART object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromZED1(uart, msg):
+def OnDataRecvFromZED1(params):
     pass
 
 # ---------------------------------------------------------------
 # ZED2 message received callback
 # It is called from ISR!!!
 # Don't waste the CPU processing time.
+# params[0] : UART object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromZED2(uart, msg):
+def OnDataRecvFromZED2(params):
     pass
 
 # ---------------------------------------------------------------
 # ZED3 message received callback
 # It is called from ISR!!!
 # Don't waste the CPU processing time.
+# params[0] : UART object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromZED3(uart, msg):
+def OnDataRecvFromZED3(params):
     pass
 
 # ---------------------------------------------------------------
 # XBEE_LP message received callback
 # It is called from ISR!!!
 # Don't waste the CPU processing time.
+# params[0] : UART object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromXBeeLP(uart, msg):
+def OnDataRecvFromXBeeLP(params):
+    msg = params[1]
     zed1.send(msg)
     zed2.send(msg)
     zed3.send(msg)
@@ -55,9 +64,9 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZEDs
-zed1 = UART('ZED1', 115200, rxbuf=0)
-zed2 = UART('ZED2', 115200, rxbuf=0)
-zed3 = UART('ZED3', 115200, rxbuf=0)
+zed1 = UART('ZED1', 115200)
+zed2 = UART('ZED2', 115200)
+zed3 = UART('ZED3', 115200)
 
 # ---------------------------------------------------------------
 # XBEE Expansions
@@ -67,7 +76,7 @@ zed3 = UART('ZED3', 115200, rxbuf=0)
 pwr.on(machine.POWER_XBEE)
 
 # XBEE LP UART configuration
-xbee_lp = UART('XBEE_LP', 115200, rxbuf=0)
+xbee_lp = UART('XBEE_LP', 115200)
 
 # ---------------------------------------------------------------
 # Application process

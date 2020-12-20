@@ -5,9 +5,12 @@ from sty import Parser
 
 # ---------------------------------------------------------------
 # NMEA message received callback
+# params[0] : Parser object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnNmeaMsg(parser, nmeaMsg):
-    parser.decode(nmeaMsg)
+def OnNmeaMsg(params):
+    parser = params[0]
+    parser.decode(params[1])
 
 # ---------------------------------------------------------------
 # NMEA message decoded callback
@@ -17,9 +20,12 @@ def OnNmeaDecoded(msgType, msgItems):
 
 # ---------------------------------------------------------------
 # UBX message received callback
+# params[0] : Parser object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnUbloxMsg(parser, ubxMsg):
-    parser.decode(ubxMsg)
+def OnUbloxMsg(params):
+    parser = params[0]
+    parser.decode(params[1])
 
 # ---------------------------------------------------------------
 # UBX message decoded callback
@@ -36,11 +42,11 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # Parser configurations
-parser1 = Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsg, decall=OnNmeaDecoded)
-parser2 = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecoded)
+nmea = Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsg, decall=OnNmeaDecoded)
+ublx = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecoded)
 
 # UART configuration of ZED1 without application buffer and multiple parsers!
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True, parser=[parser1, parser2])
+zed1 = UART('ZED1', 115200, dma=True, parser=[nmea, ublx])
 
 # ---------------------------------------------------------------
 # Application process

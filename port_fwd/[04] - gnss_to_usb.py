@@ -1,6 +1,8 @@
-import sty
+import machine
 import _thread
+import sty
 from sty import UART
+from sty import Parser
 
 # ---------------------------------------------------------------
 # On-Board LEDs
@@ -11,35 +13,37 @@ led2 = sty.LED(2)
 led3 = sty.LED(3)
 
 # ---------------------------------------------------------------
-# GNSS NMEA message received callback
+# NMEA message received callback
+# params[0] : Parser object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnNmeaMsg(uart, nmeaMsg):
-    print(nmeaMsg.decode('utf-8'))
+def OnNmeaMsg(params):
+    print(params[1].decode('utf-8'))
     led2.toggle()
 
 # ---------------------------------------------------------------
-# GNSS NMEA message parsed callback
+# NMEA message parsed callback
 # ---------------------------------------------------------------
-def OnParsedMsg(msgType, msgItems):
-    pass
+def OnDecodedMsg(msgType, msgItems):
+    print(msgType, msgItems)
 
 # ---------------------------------------------------------------
 # GNSS Modules
 # ---------------------------------------------------------------
 
-# UART configuration of ZEDs with application buffer
-zed1 = UART('ZED1', 115200, rxbuf=1024)
+# Power-On the GNSS subsystem
+pwr = machine.Power()
+pwr.on(machine.POWER_GNSS)
 
-# Parser configuration
-zed1.parser(UART.ParserNMEA, rxbuf=256, rxcallback=OnNmeaMsg, frcallback=OnParsedMsg)
+# UART configuration of ZED with application buffer and NMEA parser
+zed1 = UART('ZED1', 115200, rxbuf=1024, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsg, decall=OnDecodedMsg))
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
 def app_proc():
     while True:
-        # ZED Message processor
-        zed1.process(UART.ParserNMEA)
+        pass
 
 # ---------------------------------------------------------------
 # Application entry point

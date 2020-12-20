@@ -4,6 +4,40 @@ import _thread
 from sty import UART
 
 # ---------------------------------------------------------------
+# ZED message received callback
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
+# params[0] : UART object
+# params[1] : Message object
+# ---------------------------------------------------------------
+def OnDataRecvFromZED(params):
+    msg = params[1]
+    # Use non-blocking call
+    xbee_lp.send(msg)
+    xbee_hp.send(msg)
+    led1.toggle()
+
+# ---------------------------------------------------------------
+# XBEE LP message received callback
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
+# params[0] : UART object
+# params[1] : Message object
+# ---------------------------------------------------------------
+def OnDataRecvFromXBeeLP(params):
+    pass
+
+# ---------------------------------------------------------------
+# XBEE HP message received callback
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
+# params[0] : UART object
+# params[1] : Message object
+# ---------------------------------------------------------------
+def OnDataRecvFromXBeeHP(params):
+    pass
+
+# ---------------------------------------------------------------
 # On-Board LEDs
 # ---------------------------------------------------------------
 
@@ -16,7 +50,7 @@ led3 = sty.LED(3)
 # ---------------------------------------------------------------
 
 # UART configuration of ZED
-zed1 = UART('ZED1', 115200, rxbuf=0)
+zed1 = UART('ZED1', 115200)
 
 # ---------------------------------------------------------------
 # XBEE Expansions
@@ -27,37 +61,15 @@ pwr = machine.Power()
 pwr.on(machine.POWER_XBEE)
 
 # XBEE LP UART configuration
-xbee_lp = UART('XBEE_LP', 115200, rxbuf=0)
+xbee_lp = UART('XBEE_LP', 115200)
 
 # XBEE HP UART configuration
-xbee_hp = UART('XBEE_HP', 115200, rxbuf=0)
+xbee_hp = UART('XBEE_HP', 115200)
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
 def app_proc():
-
-    # ZED message received callback
-    # It is called from ISR!!!
-    # Don't waste the CPU processing time.
-    def OnDataRecvFromZED(uart, msg):
-        # Use non-blocking call
-        xbee_lp.send(msg)
-        xbee_hp.send(msg)
-        led1.toggle()
-
-    # XBEE LP message received callback
-    # It is called from ISR!!!
-    # Don't waste the CPU processing time.
-    def OnDataRecvFromXBeeLP(uart, msg):
-        pass
-
-    # XBEE HP message received callback
-    # It is called from ISR!!!
-    # Don't waste the CPU processing time.
-    def OnDataRecvFromXBeeHP(uart, msg):
-        pass
-
     # Set the GNSS ISR callbacks
     zed1.callback(OnDataRecvFromZED)
 

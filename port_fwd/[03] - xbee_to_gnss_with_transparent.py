@@ -20,9 +20,9 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZEDs
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
-zed2 = UART('ZED2', 115200, rxbuf=0, dma=True)
-zed3 = UART('ZED3', 115200, rxbuf=0, dma=True)
+zed1 = UART('ZED1', 115200, dma=True)
+zed2 = UART('ZED2', 115200, dma=True)
+zed3 = UART('ZED3', 115200, dma=True)
 
 # ---------------------------------------------------------------
 # XBEE Expansions
@@ -32,7 +32,7 @@ zed3 = UART('ZED3', 115200, rxbuf=0, dma=True)
 pwr.on(machine.POWER_XBEE)
 
 # XBEE LP UART configuration
-xbee_lp = UART('XBEE_LP', 115200, rxbuf=0, dma=False)
+xbee_lp = UART('XBEE_LP', 115200, dma=False)
 
 # Hardware connection of ports
 # (xbee_lp -> zed1)

@@ -14,9 +14,12 @@ from sty import Parser
 
 # ---------------------------------------------------------------
 # UBX message received callback
+# params[0] : Parser object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnUbloxMsg(parser, ubxMsg):
-    parser.decode(ubxMsg)
+def OnUbloxMsg(params):
+    parser = params[0]
+    parser.decode(params[1])
 
 # ---------------------------------------------------------------
 # UBX message decoded callback for ZED1
@@ -82,10 +85,10 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZED1 without application buffer and UBX parser
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True, parser=Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecodedZED1))
+zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecodedZED1))
 
 # UART configuration of ZED2 without application buffer and UBX parser
-zed2 = UART('ZED2', 115200, rxbuf=0, dma=True, parser=Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecodedZED2))
+zed2 = UART('ZED2', 115200, dma=True, parser=Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecodedZED2))
 
 # ---------------------------------------------------------------
 # Ethernet based socket interface

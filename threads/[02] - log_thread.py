@@ -1,7 +1,28 @@
-from sty import Pin
-from sty import UART
-import uasyncio as asyncio
+import machine
+import uasyncio
 import sty
+from sty import UART
+from sty import Parser
+
+# ---------------------------------------------------------------
+# NMEA message received callback of ZED1
+# params[0] : Parser object
+# params[1] : Message object
+# ---------------------------------------------------------------
+def OnNmeaMsgZED1(params):
+    s = 'ZED1: ' + params[1].decode('utf-8')
+    fp1.write(s + '\n')
+    print(s)
+
+# ---------------------------------------------------------------
+# NMEA message received callback of ZED2
+# params[0] : Parser object
+# params[1] : Message object
+# ---------------------------------------------------------------
+def OnNmeaMsgZED2(params):
+    s = 'ZED2: ' + params[1].decode('utf-8')
+    fp2.write(s + '\n')
+    print(s)
 
 # ---------------------------------------------------------------
 # On-Board LEDs
@@ -18,52 +39,20 @@ fext1 = 0
 fext2 = 0
 
 # Create the test files
-fp1 = open('nmea_log1.000', 'w')
-fp2 = open('nmea_log2.000', 'w')
+fp1 = open('nmea_log1.000', 'a+')
+fp2 = open('nmea_log2.000', 'a+')
 
 # ---------------------------------------------------------------
 # GNSS Modules
 # ---------------------------------------------------------------
 
 # Power-on the GNSS subsystem
-gnss_pwr = Pin('PWR_GNSS', Pin.OUT_PP)
-gnss_pwr.high()
+pwr = machine.Power()
+pwr.on(machine.POWER_GNSS)
 
-# UART configuration of ZEDs without application buffer
-zed1_uart = UART('ZED1', 115200, rxbuf=0, dma=True)
-zed2_uart = UART('ZED2', 115200, rxbuf=0, dma=True)
-
-# ---------------------------------------------------------------
-# ZED1 GNSS NMEA message received callback
-# ---------------------------------------------------------------
-def OnNmeaMsg1(uart, nmeaMsg):
-    s = 'ZED1: ' + nmeaMsg.decode('utf-8')
-    print(s)
-    fp1.write(s + '\n')
-
-# ---------------------------------------------------------------
-# ZED1 GNSS NMEA message parsed callback
-# ---------------------------------------------------------------
-def OnParsedMsg1(msgType, msgItems):
-    pass
-
-# ---------------------------------------------------------------
-# ZED2 GNSS NMEA message received callback
-# ---------------------------------------------------------------
-def OnNmeaMsg2(uart, nmeaMsg):
-    s = 'ZED2: ' + nmeaMsg.decode('utf-8')
-    print(s)
-    fp2.write(s + '\n')
-
-# ---------------------------------------------------------------
-# ZED2 GNSS NMEA message parsed callback
-# ---------------------------------------------------------------
-def OnParsedMsg2(msgType, msgItems):
-    pass
-
-# Parser configuration
-zed1_uart.parser(UART.ParserNMEA, rxbuf=256, rxcallback=OnNmeaMsg1, frcallback=OnParsedMsg1)
-zed2_uart.parser(UART.ParserNMEA, rxbuf=256, rxcallback=OnNmeaMsg2, frcallback=OnParsedMsg2)
+# UART configuration of ZEDs without application buffer and NMEA parser
+zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED1))
+zed2 = UART('ZED2', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED2))
 
 # ---------------------------------------------------------------
 # Thread #1 process
@@ -73,14 +62,6 @@ async def thread1_proc():
     global fp1, fp2
 
     while True:
-        # ZED1 NMEA framer processor
-        zed1_uart.process(UART.ParserNMEA)
-        fp1.flush()
-
-        # ZED2 NMEA framer processor
-        zed2_uart.process(UART.ParserNMEA)
-        fp2.flush()
-
         # Check the size of files
         if fp1.tell() > 1000000:
             print('ZED1 file bigger than 1MB')
@@ -98,7 +79,7 @@ async def thread1_proc():
             fp2 = open(s, 'w')
 
         # Yield to the other tasks
-        await asyncio.sleep_ms(10)
+        await uasyncio.sleep_ms(10)
 
 # ---------------------------------------------------------------
 # Thread #2 process
@@ -106,7 +87,7 @@ async def thread1_proc():
 async def thread2_proc():
     while True:
         led2.toggle()
-        await asyncio.sleep_ms(100)
+        await uasyncio.sleep_ms(100)
 
 # ---------------------------------------------------------------
 # Thread #3 process
@@ -114,16 +95,16 @@ async def thread2_proc():
 async def thread3_proc():
     while True:
         led3.toggle()
-        await asyncio.sleep_ms(500)
+        await uasyncio.sleep_ms(500)
 
 # ---------------------------------------------------------------
 # Main process
 # ---------------------------------------------------------------
 async def main():
-    asyncio.create_task(thread1_proc())
-    asyncio.create_task(thread2_proc())
-    asyncio.create_task(thread3_proc())
-    loop = asyncio.get_event_loop()
+    uasyncio.create_task(thread1_proc())
+    uasyncio.create_task(thread2_proc())
+    uasyncio.create_task(thread3_proc())
+    loop = uasyncio.get_event_loop()
     loop.run_forever()
 
 # ---------------------------------------------------------------
@@ -131,8 +112,8 @@ async def main():
 # ---------------------------------------------------------------
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        uasyncio.run(main())
     except KeyboardInterrupt:
         print('Interrupted')
     finally:
-        asyncio.new_event_loop()
+        uasyncio.new_event_loop()

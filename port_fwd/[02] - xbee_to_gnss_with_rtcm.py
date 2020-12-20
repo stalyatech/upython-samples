@@ -2,6 +2,7 @@ import sty
 import machine
 import _thread
 from sty import UART
+from sty import Parser
 
 # ---------------------------------------------------------------
 # On-Board LEDs
@@ -20,14 +21,17 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZEDs
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
-zed2 = UART('ZED2', 115200, rxbuf=0, dma=True)
-zed3 = UART('ZED3', 115200, rxbuf=0, dma=True)
+zed1 = UART('ZED1', 115200, dma=True)
+zed2 = UART('ZED2', 115200, dma=True)
+zed3 = UART('ZED3', 115200, dma=True)
 
 # ---------------------------------------------------------------
 # RTCM message received callback
+# params[0] : Parser object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnRtcmMsg(uart, rtcmMsg):
+def OnRtcmMsg(params):
+    rtcmMsg = params[1]
     zed1.send(rtcmMsg)
     zed2.send(rtcmMsg)
     zed3.send(rtcmMsg)
@@ -41,19 +45,15 @@ def OnRtcmMsg(uart, rtcmMsg):
 # Power-On the XBEE subsystem
 pwr.on(machine.POWER_XBEE)
 
-# XBEE LP UART configuration
-xbee_lp = UART('XBEE_LP', 115200, rxbuf=0, dma=True)
-
-# Parser configuration
-xbee_lp.parser(UART.ParserRTCM, rxbuf=2048, rxcallback=OnRtcmMsg)
+# UART configuration of XBEE LP without application buffer and RTCM parser
+xbee_lp = UART('XBEE_LP', 115200, dma=True, parser=Parser(Parser.RTCM, rxbuf=2048, rxcall=OnRtcmMsg))
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
 def app_proc():
     while True:
-        # Call the RTCM framer processor
-        xbee_lp.process(UART.ParserRTCM)
+        pass
 
 # ---------------------------------------------------------------
 # Application entry point

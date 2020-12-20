@@ -5,15 +5,20 @@ from sty import Parser
 
 # ---------------------------------------------------------------
 # RTCM message received callback
+# params[0] : Parser object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnRtcmMsg(parser, rtcmMsg):
-    print(rtcmMsg)
+def OnRtcmMsg(params):
+    print(params[1])
 
 # ---------------------------------------------------------------
 # UBX message received callback
+# params[0] : Parser object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnUbloxMsg(parser, ubxMsg):
-    parser.input(ubxMsg)
+def OnUbloxMsg(params):
+    parser = params[0]
+    parser.decode(params[1])
 
 # ---------------------------------------------------------------
 # UBX message decoded callback
@@ -30,7 +35,7 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZED without application buffer and RTCM parser
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
+zed1 = UART('ZED1', 115200, dma=True)
 
 # ---------------------------------------------------------------
 # XBEE Expansions
@@ -40,11 +45,11 @@ zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
 pwr.on(machine.POWER_XBEE)
 
 # Parser configurations
-parser1 = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecoded)
-parser2 = Parser(Parser.RTCM, rxbuf=2048, rxcall=OnRtcmMsg)
+ublx = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecoded)
+rtcm = Parser(Parser.RTCM, rxbuf=2048, rxcall=OnRtcmMsg)
 
 # UART configuration of XBEE HP without application buffer and multiple parsers!
-xbee_hp = UART('XBEE_HP', 115200, rxbuf=0, dma=True, parser=[parser1, parser2])
+xbee_hp = UART('XBEE_HP', 115200, dma=True, parser=[ublx, rtcm])
 
 # ---------------------------------------------------------------
 # Application process

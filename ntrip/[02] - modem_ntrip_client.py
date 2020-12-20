@@ -16,8 +16,9 @@ from sty import Parser
 # ---------------------------------------------------------------
 # UBX message received callback
 # ---------------------------------------------------------------
-def OnUbloxMsg(parser, ubxMsg):
-    parser.decode(ubxMsg)
+def OnUbloxMsg(params):
+    parser = params[0]
+    parser.decode(params[1])
 
 # ---------------------------------------------------------------
 # UBX message decoded callback for ZED1

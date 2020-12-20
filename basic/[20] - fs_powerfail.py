@@ -8,16 +8,16 @@ from sty import Parser
 # ---------------------------------------------------------------
 # NMEA message received callback of ZED1
 # ---------------------------------------------------------------
-def OnNmeaMsgZED1(parser, nmeaMsg):
-    s = 'ZED1: ' + nmeaMsg.decode('utf-8')
+def OnNmeaMsgZED1(params):
+    s = 'ZED1: ' + params[1].decode('utf-8')
     fp1.write(s + '\n')
     print(s)
 
 # ---------------------------------------------------------------
 # NMEA message received callback of ZED2
 # ---------------------------------------------------------------
-def OnNmeaMsgZED2(uart, nmeaMsg):
-    s = 'ZED2: ' + nmeaMsg.decode('utf-8')
+def OnNmeaMsgZED2(params):
+    s = 'ZED2: ' + params[1].decode('utf-8')
     fp2.write(s + '\n')
     print(s)
 
@@ -46,8 +46,8 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZEDs without application buffer and NMEA parser
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED1))
-zed2 = UART('ZED2', 115200, rxbuf=0, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED2))
+zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED1))
+zed2 = UART('ZED2', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED2))
 
 # ---------------------------------------------------------------
 # FAT power failure test

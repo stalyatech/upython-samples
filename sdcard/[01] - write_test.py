@@ -1,19 +1,17 @@
+import machine
 import _thread
 from sty import UART
+from sty import Parser
 
 # ---------------------------------------------------------------
-# GNSS NMEA message received callback
+# NMEA message received callback
+# params[0] : Parser object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnNmeaMsg(uart, nmeaMsg):
-    s = nmeaMsg.decode('utf-8')
-    print(s)
+def OnNmeaMsg(params):
+    s = params[1].decode('utf-8')
     f.write(s + '\n')
-
-# ---------------------------------------------------------------
-# GNSS NMEA message parsed callback
-# ---------------------------------------------------------------
-def OnParsedMsg(msgType, msgItems):
-    pass
+    print(s)
 
 # ---------------------------------------------------------------
 # File system usage
@@ -26,21 +24,19 @@ f = open('nmea_log.txt', 'w')
 # GNSS Modules
 # ---------------------------------------------------------------
 
-# UART configuration of ZEDs without application buffer
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
+# Power-on the GNSS subsystem
+pwr = machine.Power()
+pwr.on(machine.POWER_GNSS)
 
-# Parser configuration
-zed1.parser(UART.ParserNMEA, rxbuf=256, rxcallback=OnNmeaMsg, frcallback=OnParsedMsg)
+# UART configuration of ZED without application buffer and NMEA parser
+zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsg))
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
 def app_proc():
     while True:
-        # Call the NMEA framer processor
-        zed1.process(UART.ParserNMEA)
-        # Flush the file buffer
-        f.flush()
+        pass
 
 # ---------------------------------------------------------------
 # Application entry point

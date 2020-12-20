@@ -5,9 +5,12 @@ from sty import Parser
 
 # ---------------------------------------------------------------
 # NMEA message received callback
+# params[0] : Parser object
+# params[1] : Message object
 # ---------------------------------------------------------------
-def OnNmeaMsg(parser, nmeaMsg):
-    parser.decode(nmeaMsg)
+def OnNmeaMsg(params):
+    parser = params[0]
+    parser.decode(params[1])
 
 # ---------------------------------------------------------------
 # NMEA message decoded callback
@@ -24,7 +27,7 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZED1 without application buffer and NMEA parser
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsg, decall=OnDecodedMsg))
+zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsg, decall=OnDecodedMsg))
 
 # ---------------------------------------------------------------
 # Application process

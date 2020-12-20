@@ -1,23 +1,24 @@
 import machine
 import _thread
 from sty import UART
+from sty import Parser
 
 # ---------------------------------------------------------------
 # RTCM message received callback
 # ---------------------------------------------------------------
-def OnRtcmMsg(uart, rtcmMsg):
-    zed1.send(rtcmMsg)
+def OnRtcmMsg(parser, rtcmMsg):
+    print(rtcmMsg)
 
 # ---------------------------------------------------------------
-# GNSS UBX message received callback
+# UBX message received callback
 # ---------------------------------------------------------------
-def OnUbloxMsg(uart, ubxMsg):
-    uart.parse_ubx(ubxMsg)
+def OnUbloxMsg(parser, ubxMsg):
+    parser.input(ubxMsg)
 
 # ---------------------------------------------------------------
-# GNSS UBX message parsed callback
+# UBX message decoded callback
 # ---------------------------------------------------------------
-def OnUbloxParsed(msgType, msgItems):
+def OnUbloxDecoded(msgType, msgItems):
     print(msgType, msgItems)
 
 # ---------------------------------------------------------------
@@ -28,7 +29,7 @@ def OnUbloxParsed(msgType, msgItems):
 pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
-# UART configuration of ZED with application buffer
+# UART configuration of ZED without application buffer and RTCM parser
 zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
 
 # ---------------------------------------------------------------
@@ -38,22 +39,19 @@ zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
 # Power-on the XBEE subsystem
 pwr.on(machine.POWER_XBEE)
 
-# XBEE HP UART configuration
-xbee_hp = UART('XBEE_HP', 115200, rxbuf=0, dma=True)
+# Parser configurations
+parser1 = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecoded)
+parser2 = Parser(Parser.RTCM, rxbuf=2048, rxcall=OnRtcmMsg)
 
-# Parser configuration
-xbee_hp.parser(UART.ParserUBX, rxbuf=2048, rxcallback=OnUbloxMsg, frcallback=OnUbloxParsed)
-xbee_hp.parser(UART.ParserRTCM, rxbuf=2048, rxcallback=OnRtcmMsg)
+# UART configuration of XBEE HP without application buffer and multiple parsers!
+xbee_hp = UART('XBEE_HP', 115200, rxbuf=0, dma=True, parser=[parser1, parser2])
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
 def app_proc():
     while True:
-        # Call the RTCM framer processor
-        xbee_hp.process(UART.ParserRTCM)
-        # Call the UBX framer processor
-        xbee_hp.process(UART.ParserUBX)
+        pass
 
 # ---------------------------------------------------------------
 # Application entry point

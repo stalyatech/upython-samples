@@ -1,0 +1,11 @@
+{
+	"name": "Stalya Ntrip Server",
+	"mountpoint": "STYIST0",
+	"caster": {
+		"host": "ntrip.stalya.com",
+		"port": 2101,
+		"username": "stalya",
+		"password": "1234",
+		"version": 1
+	},
+}

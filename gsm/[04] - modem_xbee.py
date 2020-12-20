@@ -1,7 +1,7 @@
+import uasyncio
 import network
 from sty import Pin
 from sty import UART
-import uasyncio as asyncio
 
 # ---------------------------------------------------------------
 # GSM Module Communication based socket interface (on XBEE-HP)
@@ -16,7 +16,7 @@ nic = network.GSM(UART('XBEE_HP', 115200, rxbuf=1024, dma=False), pwr_pin=pwr, i
 # ---------------------------------------------------------------
 async def app_proc(url, port):
     # Print info
-    print('GSM connection started...\r\n')
+    print('\r\nWaiting for link-up')
 
     # Configure the GSM parameters
     nic.config(user='gprs', pwd='gprs', apn='internet', pin='1234')
@@ -24,9 +24,9 @@ async def app_proc(url, port):
     # Connect to the gsm network
     nic.connect()
 
-    # Wait till connection
+    # Wait for connection
     while not nic.isconnected():
-        await asyncio.sleep_ms(100)
+        await uasyncio.sleep_ms(100)
 
     # Status info
     ipaddr = nic.ifconfig('ipaddr')
@@ -39,7 +39,7 @@ async def app_proc(url, port):
     print('Signal Quality: %d,%d' % (qos[0], qos[1]))
 
     # Get the stream reader/writer while connwcto to the host
-    reader, writer = await asyncio.open_connection(url, port)
+    reader, writer = await uasyncio.open_connection(url, port)
 
     # Send header data to the host
     print('Write GET')
@@ -67,4 +67,4 @@ async def app_proc(url, port):
 # ---------------------------------------------------------------
 # Start the application process
 # ---------------------------------------------------------------
-asyncio.run(app_proc('google.com', 80))
+uasyncio.run(app_proc('google.com', 80))

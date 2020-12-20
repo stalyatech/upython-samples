@@ -24,7 +24,7 @@ def app_proc():
     utime.sleep_ms(1000)
 
     # Print info
-    print('GSM connection started...\r\n')
+    print('\r\nWaiting for link-up')
 
     # Configure the GSM parameters
     nic.config(user='gprs', pwd='gprs', apn='internet', pin='1234')
@@ -32,7 +32,7 @@ def app_proc():
     # Connect to the gsm network
     nic.connect()
 
-    # Wait till connection
+    # Wait for connection
     while not nic.isconnected():
         utime.sleep_ms(100)
 

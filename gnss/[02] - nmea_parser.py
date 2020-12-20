@@ -1,20 +1,19 @@
 import machine
 import _thread
 from sty import UART
+from sty import Parser
 
 # ---------------------------------------------------------------
-# GNSS NMEA message received callback
+# NMEA message received callback
 # ---------------------------------------------------------------
-def OnNmeaMsg(uart, nmeaMsg):
-    print(nmeaMsg)
-    uart.parse_nmea(nmeaMsg)
+def OnNmeaMsg(parser, nmeaMsg):
+    parser.decode(nmeaMsg)
 
 # ---------------------------------------------------------------
-# GNSS NMEA message parsed callback
+# NMEA message decoded callback
 # ---------------------------------------------------------------
-def OnParsedMsg(msgType, msgItems):
-    print(msgType)
-    print(msgItems)
+def OnDecodedMsg(msgType, msgItems):
+    print(msgType, msgItems)
 
 # ---------------------------------------------------------------
 # GNSS Modules
@@ -24,19 +23,15 @@ def OnParsedMsg(msgType, msgItems):
 pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
-# UART configuration of ZEDs without application buffer
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
-
-# Parser configuration
-zed1.parser(UART.ParserNMEA, rxbuf=256, rxcallback=OnNmeaMsg, frcallback=OnParsedMsg)
+# UART configuration of ZED1 without application buffer and NMEA parser
+zed1 = UART('ZED1', 115200, rxbuf=0, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsg, decall=OnDecodedMsg))
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
 def app_proc():
     while True:
-        # Call the NMEA framer processor
-        zed1.process(UART.ParserNMEA)
+        pass
 
 # ---------------------------------------------------------------
 # Application entry point

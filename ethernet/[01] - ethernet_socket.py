@@ -50,7 +50,7 @@ def app_proc():
     print('Socket connected')
 
     # Send data to the host
-    sock.send(b'GET / HTTP/1.1\r\nHost: ardusimple.com\r\n\r\n')
+    sock.send(b'GET / HTTP/1.0\r\n\r\n')
     print('Packet sent\r\n')
 
     # Get data from the host

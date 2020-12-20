@@ -38,7 +38,7 @@ xbee_lp = UART('XBEE_LP', 115200, rxbuf=0, dma=False)
 # (xbee_lp -> zed1)
 # (xbee_lp -> zed2)
 # (xbee_lp -> zed3)
-xbee_lp.connect(obj1=zed1)
+xbee_lp.connect([zed1, zed2, zed3])
 
 # ---------------------------------------------------------------
 # Application process

@@ -1,7 +1,7 @@
 """
-Module: 'machine' on pySBC 1.13.0 with FW1.5.12-278
+Module: 'machine' on pySBC 1.13.0 with FW2.0.1-363
 """
-# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW1.5.12', version='v1.13-278-gdb9b90e71-dirty on 2020-11-26', machine='simpleRTK-SBC-R02 with STM32H743')
+# MCU: (sysname='pySBC', nodename='pySBC', release='1.13.0 with FW2.0.1', version='v1.13-363-g1fdf4f6ee-dirty on 2020-12-16', machine='simpleRTK-SBC-R02 with STM32H743')
 # Stubber: 1.3.4
 
 class ADC:
@@ -61,8 +61,6 @@ POWER_GNSS = 0
 POWER_GSM = 4
 POWER_HUB = 5
 POWER_XBEE = 1
-POWER_XBEE_HP = 3
-POWER_XBEE_LP = 2
 PWRON_RESET = 1
 
 class Pin:
@@ -312,10 +310,6 @@ class UART:
     ''
     CTS = 512
     IRQ_RXIDLE = 16
-    ParserNMEA = 1
-    ParserNONE = 0
-    ParserRTCM = 3
-    ParserUBX = 2
     RTS = 256
     def any():
         pass
@@ -324,6 +318,9 @@ class UART:
         pass
 
     def connect():
+        pass
+
+    def decode():
         pass
 
     def deinit():
@@ -336,18 +333,6 @@ class UART:
         pass
 
     def istxbusy():
-        pass
-
-    def parse_nmea():
-        pass
-
-    def parse_ubx():
-        pass
-
-    def parser():
-        pass
-
-    def process():
         pass
 
     def read():

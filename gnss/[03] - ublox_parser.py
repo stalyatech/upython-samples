@@ -1,19 +1,19 @@
 import machine
 import _thread
 from sty import UART
+from sty import Parser
 
 # ---------------------------------------------------------------
-# GNSS UBX message received callback
+# UBX message received callback
 # ---------------------------------------------------------------
-def OnUbloxMsg(uart, ubxMsg):
-    uart.parse_ubx(ubxMsg)
+def OnUbloxMsg(parser, ubxMsg):
+    parser.decode(ubxMsg)
 
 # ---------------------------------------------------------------
-# GNSS UBX message parsed callback
+# UBX message decoded callback
 # ---------------------------------------------------------------
-def OnUbloxParsed(msgType, msgItems):
-    print(msgType)
-    print(msgItems)
+def OnUbloxDecoded(msgType, msgItems):
+    print(msgType, msgItems)
 
 # ---------------------------------------------------------------
 # GNSS Modules
@@ -23,19 +23,15 @@ def OnUbloxParsed(msgType, msgItems):
 pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
-# UART configuration of ZED with application buffer
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True)
-
-# Parser configurations
-zed1.parser(UART.ParserUBX, rxbuf=2048, rxcallback=OnUbloxMsg, frcallback=OnUbloxParsed)
+# UART configuration of ZED1 without application buffer and UBX parser
+zed1 = UART('ZED1', 115200, rxbuf=0, dma=True, parser=Parser(Parser.UBX, rxbuf=1024, rxcall=OnUbloxMsg, decall=OnUbloxDecoded))
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
 def app_proc():
     while True:
-        # Call the UBX framer processor
-        zed1.process(UART.ParserUBX)
+        pass
 
 # ---------------------------------------------------------------
 # Application entry point

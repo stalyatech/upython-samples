@@ -37,11 +37,10 @@ async def thread3_proc():
 # Main process
 # ---------------------------------------------------------------
 async def main():
-    uasyncio.create_task(thread1_proc())
-    uasyncio.create_task(thread2_proc())
-    uasyncio.create_task(thread3_proc())
-    loop = uasyncio.get_event_loop()
-    loop.run_forever()
+    task1 = uasyncio.create_task(thread1_proc())
+    task2 = uasyncio.create_task(thread2_proc())
+    task3 = uasyncio.create_task(thread3_proc())
+    await (task1, task2, task3)
 
 # ---------------------------------------------------------------
 # Application entry point
@@ -51,5 +50,6 @@ if __name__ == "__main__":
         uasyncio.run(main())
     except KeyboardInterrupt:
         print('Interrupted')
-    finally:
-        uasyncio.new_event_loop()
+        led1.off()
+        led2.off()
+        led3.off()

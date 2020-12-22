@@ -1,5 +1,6 @@
+import machine
+import uasyncio
 import sty
-import _thread
 from sty import Pin
 
 # ---------------------------------------------------------------
@@ -42,14 +43,5 @@ tim1.callback(OnTimer)
 # ---------------------------------------------------------------
 
 # Power-on the GNSS subsystem
-gnss_pwr = Pin('PWR_GNSS', Pin.OUT_PP)
-gnss_pwr.high()
-
-# Main application process
-def app_proc():
-    while True:
-        pass
-
-if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+pwr = machine.Power()
+pwr.on(machine.POWER_GNSS)

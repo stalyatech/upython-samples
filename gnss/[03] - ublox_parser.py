@@ -1,16 +1,19 @@
+from collections import deque
 import machine
-import _thread
+import uasyncio
 from sty import UART
 from sty import Parser
 
+# Initializing the message queue
+msgq = deque((), 10)
+
 # ---------------------------------------------------------------
 # UBX message received callback
-# params[0] : Parser object
-# params[1] : Message object
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnUbloxMsg(params):
-    parser = params[0]
-    parser.decode(params[1])
+def OnUbloxMsg(message):
+    msgq.append(message)
 
 # ---------------------------------------------------------------
 # UBX message decoded callback
@@ -26,19 +29,28 @@ def OnUbloxDecoded(msgType, msgItems):
 pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
+# Configure the UBX parser
+ubx = Parser(Parser.UBX, rxbuf=1024, rxcall=OnUbloxMsg, decall=OnUbloxDecoded)
+
 # UART configuration of ZED1 without application buffer and UBX parser
-zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.UBX, rxbuf=1024, rxcall=OnUbloxMsg, decall=OnUbloxDecoded))
+zed1 = UART('ZED1', 115200, dma=True, parser=ubx)
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
+async def app_proc():
     while True:
-        pass
+        # Decode the UBX messages
+        try:
+            ubx.decode(msgq.popleft())
+        except Exception:
+            pass
 
 # ---------------------------------------------------------------
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

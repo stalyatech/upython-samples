@@ -1,8 +1,7 @@
-import utime
 import ussl
 import usocket
+import uasyncio
 import network
-import _thread
 from sty import Pin
 from sty import UART
 
@@ -18,10 +17,7 @@ nic = network.GSM(UART('GSM', 115200, flow=UART.RTS|UART.CTS, rxbuf=1024, dma=Fa
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
-
-    # Start up delay to allow REPL message
-    utime.sleep_ms(1000)
+async def app_proc(url, port):
 
     # Print info
     print('\r\nWaiting for link-up')
@@ -34,7 +30,7 @@ def app_proc():
 
     # Wait for connection
     while not nic.isconnected():
-        utime.sleep_ms(100)
+        await uasyncio.sleep_ms(100)
 
     # Status info
     ipaddr = nic.ifconfig('ipaddr')
@@ -47,7 +43,7 @@ def app_proc():
     print('Signal Quality: %d,%d' % (qos[0], qos[1]))
 
     # Get the IP address of host
-    addr = usocket.getaddrinfo('google.com', 443)[0][-1]
+    addr = usocket.getaddrinfo(url, port)[0][-1]
     print('Host: %s:%d' % (addr[0], addr[1]))
 
     # Create the socket
@@ -76,12 +72,14 @@ def app_proc():
 
     # Disconnect from the gsm network
     nic.disconnect()
-
     print('This is simple SSL socket application based on GSM NIC with CMUX support\r\n')
 
 # ---------------------------------------------------------------
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc('google.com', 443))
+    except KeyboardInterrupt:
+        print('Interrupted')
+        nic.disconnect()

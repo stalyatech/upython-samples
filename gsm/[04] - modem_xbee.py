@@ -8,13 +8,14 @@ from sty import UART
 # ---------------------------------------------------------------
 
 # Configure the network interface card (GSM)
-pwr = Pin('PWR_XBEE_HP', Pin.OUT_OD)
+pwr = Pin('PWR_XBEE', Pin.OUT_OD)
 nic = network.GSM(UART('XBEE_HP', 115200, rxbuf=1024, dma=False), pwr_pin=pwr, info=True)
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
 async def app_proc(url, port):
+
     # Print info
     print('\r\nWaiting for link-up')
 
@@ -65,6 +66,11 @@ async def app_proc(url, port):
     print('This is simple socket application based on GSM NIC with CMUX support\r\n')
 
 # ---------------------------------------------------------------
-# Start the application process
+# Application entry point
 # ---------------------------------------------------------------
-uasyncio.run(app_proc('google.com', 80))
+if __name__ == "__main__":
+    try:
+        uasyncio.run(app_proc('google.com', 80))
+    except KeyboardInterrupt:
+        print('Interrupted')
+        nic.disconnect()

@@ -1,40 +1,33 @@
 import sty
 import machine
-import _thread
+import uasyncio
 from sty import UART
 
 # ---------------------------------------------------------------
 # ZED message received callback
 # It is called from ISR!!!
 # Don't waste the CPU processing time.
-# params[0] : UART object
-# params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromZED(params):
-    msg = params[1]
+def OnDataRecvFromZED(message):
     # Use non-blocking call
-    xbee_lp.send(msg)
-    xbee_hp.send(msg)
+    xbee_lp.send(message)
+    xbee_hp.send(message)
     led1.toggle()
 
 # ---------------------------------------------------------------
 # XBEE LP message received callback
 # It is called from ISR!!!
 # Don't waste the CPU processing time.
-# params[0] : UART object
-# params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromXBeeLP(params):
+def OnDataRecvFromXBeeLP(message):
     pass
 
 # ---------------------------------------------------------------
 # XBEE HP message received callback
 # It is called from ISR!!!
 # Don't waste the CPU processing time.
-# params[0] : UART object
-# params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromXBeeHP(params):
+def OnDataRecvFromXBeeHP(message):
     pass
 
 # ---------------------------------------------------------------
@@ -50,7 +43,7 @@ led3 = sty.LED(3)
 # ---------------------------------------------------------------
 
 # UART configuration of ZED
-zed1 = UART('ZED1', 115200)
+zed1 = UART('ZED1', 115200, dma=True)
 
 # ---------------------------------------------------------------
 # XBEE Expansions
@@ -69,7 +62,7 @@ xbee_hp = UART('XBEE_HP', 115200)
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
+async def app_proc():
     # Set the GNSS ISR callbacks
     zed1.callback(OnDataRecvFromZED)
 
@@ -86,5 +79,7 @@ def app_proc():
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

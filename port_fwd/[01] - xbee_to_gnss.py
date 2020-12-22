@@ -1,6 +1,6 @@
 import sty
 import machine
-import _thread
+import uasyncio
 from sty import UART
 
 # ---------------------------------------------------------------
@@ -15,30 +15,24 @@ led3 = sty.LED(3)
 # ZED1 message received callback
 # It is called from ISR!!!
 # Don't waste the CPU processing time.
-# params[0] : UART object
-# params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromZED1(params):
+def OnDataRecvFromZED1(message):
     pass
 
 # ---------------------------------------------------------------
 # ZED2 message received callback
 # It is called from ISR!!!
 # Don't waste the CPU processing time.
-# params[0] : UART object
-# params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromZED2(params):
+def OnDataRecvFromZED2(message):
     pass
 
 # ---------------------------------------------------------------
 # ZED3 message received callback
 # It is called from ISR!!!
 # Don't waste the CPU processing time.
-# params[0] : UART object
-# params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromZED3(params):
+def OnDataRecvFromZED3(message):
     pass
 
 # ---------------------------------------------------------------
@@ -48,11 +42,10 @@ def OnDataRecvFromZED3(params):
 # params[0] : UART object
 # params[1] : Message object
 # ---------------------------------------------------------------
-def OnDataRecvFromXBeeLP(params):
-    msg = params[1]
-    zed1.send(msg)
-    zed2.send(msg)
-    zed3.send(msg)
+def OnDataRecvFromXBeeLP(message):
+    zed1.send(message)
+    zed2.send(message)
+    zed3.send(message)
     led1.toggle()
 
 # ---------------------------------------------------------------
@@ -81,7 +74,7 @@ xbee_lp = UART('XBEE_LP', 115200)
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
+async def app_proc():
     # Set the GNSS ISR callbacks
     zed1.callback(OnDataRecvFromZED1)
     zed2.callback(OnDataRecvFromZED2)
@@ -90,6 +83,7 @@ def app_proc():
     # Set the XBEE_LP ISR callback
     xbee_lp.callback(OnDataRecvFromXBeeLP)
 
+    # Wait infinetely
     while True:
         pass
 
@@ -97,5 +91,7 @@ def app_proc():
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

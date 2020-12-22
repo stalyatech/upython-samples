@@ -1,7 +1,6 @@
-import utime
 import usocket
+import uasyncio
 import network
-import _thread
 
 # ---------------------------------------------------------------
 # Ethernet based socket interface
@@ -11,12 +10,9 @@ import _thread
 nic = network.LAN()
 
 # ---------------------------------------------------------------
-# Main application process
+# Application process
 # ---------------------------------------------------------------
-def app_proc():
-
-    # Start up delay to allow REPL message
-    utime.sleep_ms(1000)
+async def app_proc():
 
     # Print info
     print('\r\nWaiting for link-up')
@@ -26,7 +22,7 @@ def app_proc():
 
     # Wait for ethernet link up
     while nic.status() == 0:
-        utime.sleep(1)
+        await uasyncio.sleep(1)
 
     # Print info
     print('DHCP started')
@@ -71,6 +67,11 @@ def app_proc():
     # Info
     print('\r\nThis is simple socket application based on Ethernet NIC')
 
+# ---------------------------------------------------------------
+# Application entry point
+# ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

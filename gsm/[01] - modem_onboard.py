@@ -16,6 +16,7 @@ nic = network.GSM(UART('GSM', 115200, flow=UART.RTS|UART.CTS, rxbuf=1024, dma=Fa
 # Application process
 # ---------------------------------------------------------------
 async def app_proc(url, port):
+
     # Print info
     print('\r\nWaiting for link-up')
 
@@ -66,6 +67,11 @@ async def app_proc(url, port):
     print('This is simple socket application based on GSM NIC with CMUX support\r\n')
 
 # ---------------------------------------------------------------
-# Start the application process
+# Application entry point
 # ---------------------------------------------------------------
-uasyncio.run(app_proc('google.com', 80))
+if __name__ == "__main__":
+    try:
+        uasyncio.run(app_proc('google.com', 80))
+    except KeyboardInterrupt:
+        print('Interrupted')
+        nic.disconnect()

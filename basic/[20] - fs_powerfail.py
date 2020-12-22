@@ -1,3 +1,4 @@
+from collections import deque
 import utime
 import uasyncio
 import machine
@@ -5,21 +6,25 @@ import sty
 from sty import UART
 from sty import Parser
 
+# Initializing the message queues
+msgq_zed1 = deque((), 10)
+msgq_zed2 = deque((), 10)
+
 # ---------------------------------------------------------------
 # NMEA message received callback of ZED1
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnNmeaMsgZED1(params):
-    s = 'ZED1: ' + params[1].decode('utf-8')
-    fp1.write(s + '\n')
-    print(s)
+def OnNmeaMsgZED1(message):
+    msgq_zed1.append(message)
 
 # ---------------------------------------------------------------
 # NMEA message received callback of ZED2
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnNmeaMsgZED2(params):
-    s = 'ZED2: ' + params[1].decode('utf-8')
-    fp2.write(s + '\n')
-    print(s)
+def OnNmeaMsgZED2(message):
+    msgq_zed2.append(message)
 
 # ---------------------------------------------------------------
 # On-Board LEDs
@@ -46,8 +51,8 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZEDs without application buffer and NMEA parser
-zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED1))
-zed2 = UART('ZED2', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED2))
+zed1 = UART('ZED1', 115200, dma=True, dmabuf=1024, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED1))
+zed2 = UART('ZED2', 115200, dma=True, dmabuf=1024, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED2))
 
 # ---------------------------------------------------------------
 # FAT power failure test
@@ -60,6 +65,24 @@ start = utime.ticks_ms()
 # ---------------------------------------------------------------
 async def thread1_proc():
     while True:
+        # Write the ZED1 NMEA messages
+        try:
+            msg = msgq_zed1.popleft().decode('utf-8')
+            s = 'ZED1: ' + msg
+            fp1.write(s + '\n')
+            print(s)
+        except Exception:
+            pass
+
+        # Write the ZED2 NMEA messages
+        try:
+            msg = msgq_zed2.popleft().decode('utf-8')
+            s = 'ZED2: ' + msg
+            fp2.write(s + '\n')
+            print(s)
+        except Exception:
+            pass
+
         # Yield to the other tasks
         await uasyncio.sleep_ms(10)
 
@@ -85,11 +108,10 @@ async def thread3_proc():
 # Main process
 # ---------------------------------------------------------------
 async def main():
-    uasyncio.create_task(thread1_proc())
-    uasyncio.create_task(thread2_proc(start, reset))
-    uasyncio.create_task(thread3_proc())
-    loop = uasyncio.get_event_loop()
-    loop.run_forever()
+    task1 = uasyncio.create_task(thread1_proc())
+    task2 = uasyncio.create_task(thread2_proc(start, reset))
+    task3 = uasyncio.create_task(thread3_proc())
+    await (task1, task2, task3)
 
 # ---------------------------------------------------------------
 # Application entry point
@@ -99,5 +121,3 @@ if __name__ == "__main__":
         uasyncio.run(main())
     except KeyboardInterrupt:
         print('Interrupted')
-    finally:
-        uasyncio.new_event_loop()

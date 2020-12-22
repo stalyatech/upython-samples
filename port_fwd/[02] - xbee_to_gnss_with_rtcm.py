@@ -1,6 +1,6 @@
 import sty
 import machine
-import _thread
+import uasyncio
 from sty import UART
 from sty import Parser
 
@@ -27,14 +27,13 @@ zed3 = UART('ZED3', 115200, dma=True)
 
 # ---------------------------------------------------------------
 # RTCM message received callback
-# params[0] : Parser object
-# params[1] : Message object
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnRtcmMsg(params):
-    rtcmMsg = params[1]
-    zed1.send(rtcmMsg)
-    zed2.send(rtcmMsg)
-    zed3.send(rtcmMsg)
+def OnRtcmMsg(message):
+    zed1.send(message)
+    zed2.send(message)
+    zed3.send(message)
     while zed3.istxbusy():
         pass
 
@@ -51,7 +50,7 @@ xbee_lp = UART('XBEE_LP', 115200, dma=True, parser=Parser(Parser.RTCM, rxbuf=204
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
+async def app_proc():
     while True:
         pass
 
@@ -59,5 +58,7 @@ def app_proc():
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

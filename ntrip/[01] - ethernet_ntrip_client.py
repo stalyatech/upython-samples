@@ -1,3 +1,4 @@
+from collections import deque
 import gc
 import json
 import binascii
@@ -12,23 +13,34 @@ from sty import Parser
 # COPY THE "config.json" FILE TO THE PYTHON DEVICE !!!
 # ---------------------------------------------------------------
 
-# ---------------------------------------------------------------
-# UBX message received callback
-# params[0] : Parser object
-# params[1] : Message object
-# ---------------------------------------------------------------
-def OnUbloxMsg(params):
-    parser = params[0]
-    parser.decode(params[1])
+# Initializing the message queues
+msgq_zed1 = deque((), 10)
+msgq_zed2 = deque((), 10)
 
 # ---------------------------------------------------------------
-# UBX message decoded callback for ZED1
+# UBX message received callback of ZED1
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
+# ---------------------------------------------------------------
+def OnUbloxMsgZED1(message):
+    msgq_zed1.append(message)
+
+# ---------------------------------------------------------------
+# UBX message decoded callback of ZED1
 # ---------------------------------------------------------------
 def OnUbloxDecodedZED1(msgType, msgItems):
     print('ZED1: ', msgType, msgItems)
 
 # ---------------------------------------------------------------
-# UBX message decoded callback for ZED2
+# UBX message received callback of ZED2
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
+# ---------------------------------------------------------------
+def OnUbloxMsgZED2(message):
+    msgq_zed2.append(message)
+
+# ---------------------------------------------------------------
+# UBX message decoded callback of ZED2
 # ---------------------------------------------------------------
 def OnUbloxDecodedZED2(msgType, msgItems):
     print('ZED2: ', msgType, msgItems)
@@ -60,7 +72,7 @@ led3 = sty.LED(3)
 # NTRIP Client informations
 # ---------------------------------------------------------------
 HOST_CONN_TIMEOUT = 30
-DATA_READ_TIMEOUT = 5
+DATA_READ_TIMEOUT = 10
 
 # Read from config file
 config = open('config.json')
@@ -84,11 +96,15 @@ header =\
 pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
+# Configure the UBX parsers
+ubx1 = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsgZED1, decall=OnUbloxDecodedZED1)
+ubx2 = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsgZED2, decall=OnUbloxDecodedZED2)
+
 # UART configuration of ZED1 without application buffer and UBX parser
-zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecodedZED1))
+zed1 = UART('ZED1', 115200, dma=True, parser=ubx1)
 
 # UART configuration of ZED2 without application buffer and UBX parser
-zed2 = UART('ZED2', 115200, dma=True, parser=Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecodedZED2))
+zed2 = UART('ZED2', 115200, dma=True, parser=ubx2)
 
 # ---------------------------------------------------------------
 # Ethernet based socket interface
@@ -159,76 +175,83 @@ async def GetResponse(reader):
 # ---------------------------------------------------------------
 async def ntrip_proc(request):
     while True:
-        # Print info
-        print('\r\nWaiting for link-up')
-
-        # Activate the interface
-        nic.active(True)
-
-        # Wait for ethernet link up
-        while nic.status() == 0:
-            await uasyncio.sleep_ms(100)
-
-        # Print info
-        print('DHCP started')
-
-        # Configure the DHCP client and get IP address
-        nic.ifconfig(mode='dhcp')
-
-        # Status info
-        ipaddr = nic.ifconfig('ipaddr')
-        print('DHCP done: %s\r\n' % ipaddr)
-
         try:
-            # Connect to the host
-            reader, writer = await DoConnect(c['caster']['host'], c['caster']['port'], request)
+            # Print info
+            print('\r\nWaiting for link-up')
+
+            # Activate the interface
+            nic.active(True)
+
+            # Wait for ethernet link up
+            while nic.status() == 0:
+                await uasyncio.sleep(1)
+
+            # Print info
+            print('DHCP started')
+
+            # Configure the DHCP client and get IP address
+            nic.ifconfig(mode='dhcp')
+
+            # Status info
+            ipaddr = nic.ifconfig('ipaddr')
+            print('DHCP done: %s\r\n' % ipaddr)
 
             try:
-                # Get the RTCM data from the host and redirect it to the ZEDs
-                while True:
+                # Connect to the host
+                reader, writer = await DoConnect(c['caster']['host'], c['caster']['port'], request)
 
-                    # Heart-beat for NTRIP task
-                    led2.toggle()
+                try:
+                    # Get the RTCM data from the host and redirect it to the ZEDs
+                    while True:
 
-                    # There are some length bytes at the head here but it actually
-                    # seems more robust to simply let the higher level RTCMv3 parser
-                    # frame everything itself and bin the garbage as required.
+                        # Heart-beat for NTRIP task
+                        led2.toggle()
 
-                    # Get the RTCM data from NTRIP caster
-                    data = await uasyncio.wait_for(reader.read(1024), timeout=DATA_READ_TIMEOUT)
+                        # There are some length bytes at the head here but it actually
+                        # seems more robust to simply let the higher level RTCMv3 parser
+                        # frame everything itself and bin the garbage as required.
 
-                    # Send the data to the ZEDs
-                    if len(data) > 0:
-                        zed1.send(data)
-                        zed2.send(data)
-                    else:
-                        raise Exception('Data Error!')
+                        # Get the RTCM data from NTRIP caster
+                        data = await uasyncio.wait_for(reader.read(1024), timeout=DATA_READ_TIMEOUT)
 
-                    # Check the link status
-                    if nic.status() == 0:
-                        raise Exception('Link Error!')
+                        # Send the data to the ZEDs
+                        if len(data) > 0:
+                            zed1.send(data)
+                            zed2.send(data)
+                        else:
+                            raise Exception('Data Error!')
 
-                    # Suspend for a while
-                    await uasyncio.sleep_ms(100)
+                        # Check the link status
+                        if nic.status() == 0:
+                            raise Exception('Link Error!')
 
-            # Exception while data read!
-            except Exception as Exc:
-                print(Exc)
-            finally:
+                        # Suspend for a while
+                        await uasyncio.sleep_ms(100)
 
-                # Close the stream
-                writer.close()
-                await writer.wait_closed()
-                print('Stream Closed!')
+                # Exception while data read!
+                except Exception as Exc:
+                    print(Exc)
+                finally:
 
+                    # Close the stream
+                    writer.close()
+                    await writer.wait_closed()
+                    print('Stream Closed!')
+
+                    # De-activate the interface
+                    nic.active(False)
+
+            # Exception while open connection
+            except Exception:
                 # De-activate the interface
                 nic.active(False)
 
-        # Exception while open connection
-        except Exception:
+        # Exception while Link Up/IP address get
+        except Exception as Exc:
+            print(Exc)
+
             # De-activate the interface
             nic.active(False)
-
 
 # ---------------------------------------------------------------
 # Message processor
@@ -238,25 +261,35 @@ async def msg_proc():
         # Heart-beat for message processor task
         led3.toggle()
 
+        # Decode the ZED1 UBX messages
+        try:
+            ubx1.decode(msgq_zed1.popleft())
+        except Exception:
+            pass
+
+        # Decode the ZED2 UBX messages
+        try:
+            ubx2.decode(msgq_zed2.popleft())
+        except Exception:
+            pass
+
         # Yield to the other tasks
-        await uasyncio.sleep_ms(100)
+        await uasyncio.sleep_ms(20)
 
 # ---------------------------------------------------------------
 # Main process
 # ---------------------------------------------------------------
 async def main():
-    uasyncio.create_task(msg_proc())
-    while True:
-        await uasyncio.create_task(ntrip_proc(header))
+    task1 = uasyncio.create_task(ntrip_proc(header))
+    task2 = uasyncio.create_task(msg_proc())
+    await (task1, task2)
 
 # ---------------------------------------------------------------
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
     try:
-        loop = uasyncio.get_event_loop()
-        loop.run_until_complete(main())
+        uasyncio.run(main())
     except KeyboardInterrupt:
         print('Interrupted')
-    finally:
-        uasyncio.new_event_loop()
+        nic.active(False)

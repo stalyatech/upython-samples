@@ -1,5 +1,5 @@
+import uasyncio
 import sty
-import _thread
 
 # ---------------------------------------------------------------
 # Prints quaternions
@@ -22,8 +22,11 @@ ahrs = imu.Madgwick(beta=0.2)
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
+async def app_proc():
     while True:
+        # Wait for sensor ready
+        while not imu.ready():
+            pass
         # Update the filtered values (Madgwick algorithm)
         printQuaternions(ahrs.update(imu.read()))
 
@@ -31,5 +34,7 @@ def app_proc():
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

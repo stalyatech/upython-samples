@@ -1,6 +1,5 @@
-import utime
+import uasyncio
 import network
-import _thread
 from sty import Pin
 from sty import UART
 
@@ -11,7 +10,7 @@ def OnSmsReceived(smsMsg):
     print(smsMsg)
 
 # ---------------------------------------------------------------
-# GSM Module Communication based socket interface (on XBEE-HP)
+# GSM Module Communication based socket interface
 # ---------------------------------------------------------------
 
 # Configure the network interface card (GSM)
@@ -23,10 +22,7 @@ sms = nic.SMS(OnSmsReceived)
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
-
-    # Start up delay to allow REPL message
-    utime.sleep_ms(1000)
+async def app_proc():
 
     # Print info
     print('\r\nWaiting for link-up')
@@ -39,7 +35,7 @@ def app_proc():
 
     # Wait for connection
     while not nic.isconnected():
-        utime.sleep_ms(100)
+        await uasyncio.sleep_ms(100)
 
     # Status info
     ipaddr = nic.ifconfig('ipaddr')
@@ -49,18 +45,18 @@ def app_proc():
     print('IMEI Number: %s' % nic.imei())
     print('IMSI Number: %s' % nic.imsi())
     qos = nic.qos()
-    print('Signal Quality: %d,%d' % (qos[0],qos[1]))
+    print('Signal Quality: %d,%d' % (qos[0], qos[1]))
 
     # Wait till SMS idle
     while sms.isbusy():
-        utime.sleep_ms(100)
+        await uasyncio.sleep_ms(100)
 
     # SMS send
     sms.send('05XX1112233', 'Message from stalya.com')
 
     # Wait till SMS send
     while sms.isbusy():
-        utime.sleep_ms(100)
+        await uasyncio.sleep_ms(100)
 
     # Status info
     if sms.iserror():
@@ -70,16 +66,18 @@ def app_proc():
     print('Now we are waiting for any message...\r\n')
 
     # Sleep for a while
-    utime.sleep(600)
+    await uasyncio.sleep(600)
 
     # Disconnect from the gsm network
     nic.disconnect()
-
     print('This is simple SMS application based on GSM NIC with CMUX support\r\n')
 
 # ---------------------------------------------------------------
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')
+        nic.disconnect()

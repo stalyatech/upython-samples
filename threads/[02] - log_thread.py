@@ -1,28 +1,29 @@
+from collections import deque
 import machine
 import uasyncio
 import sty
 from sty import UART
 from sty import Parser
 
+# Initializing the message queues
+msgq_zed1 = deque((), 10)
+msgq_zed2 = deque((), 10)
+
 # ---------------------------------------------------------------
 # NMEA message received callback of ZED1
-# params[0] : Parser object
-# params[1] : Message object
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnNmeaMsgZED1(params):
-    s = 'ZED1: ' + params[1].decode('utf-8')
-    fp1.write(s + '\n')
-    print(s)
+def OnNmeaMsgZED1(message):
+    msgq_zed1.append(message)
 
 # ---------------------------------------------------------------
 # NMEA message received callback of ZED2
-# params[0] : Parser object
-# params[1] : Message object
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnNmeaMsgZED2(params):
-    s = 'ZED2: ' + params[1].decode('utf-8')
-    fp2.write(s + '\n')
-    print(s)
+def OnNmeaMsgZED2(message):
+    msgq_zed2.append(message)
 
 # ---------------------------------------------------------------
 # On-Board LEDs
@@ -62,6 +63,24 @@ async def thread1_proc():
     global fp1, fp2
 
     while True:
+        # Write the ZED1 NMEA messages
+        try:
+            msg = msgq_zed1.popleft().decode('utf-8')
+            s = 'ZED1: ' + msg
+            fp1.write(s + '\n')
+            print(s)
+        except Exception:
+            pass
+
+        # Write the ZED2 NMEA messages
+        try:
+            msg = msgq_zed2.popleft().decode('utf-8')
+            s = 'ZED2: ' + msg
+            fp2.write(s + '\n')
+            print(s)
+        except Exception:
+            pass
+
         # Check the size of files
         if fp1.tell() > 1000000:
             print('ZED1 file bigger than 1MB')
@@ -101,11 +120,10 @@ async def thread3_proc():
 # Main process
 # ---------------------------------------------------------------
 async def main():
-    uasyncio.create_task(thread1_proc())
-    uasyncio.create_task(thread2_proc())
-    uasyncio.create_task(thread3_proc())
-    loop = uasyncio.get_event_loop()
-    loop.run_forever()
+    task1 = uasyncio.create_task(thread1_proc())
+    task2 = uasyncio.create_task(thread2_proc())
+    task3 = uasyncio.create_task(thread3_proc())
+    await (task1, task2, task3)
 
 # ---------------------------------------------------------------
 # Application entry point
@@ -115,5 +133,6 @@ if __name__ == "__main__":
         uasyncio.run(main())
     except KeyboardInterrupt:
         print('Interrupted')
-    finally:
-        uasyncio.new_event_loop()
+        led1.off()
+        led2.off()
+        led3.off()

@@ -1,24 +1,28 @@
+from collections import deque
 import machine
-import _thread
+import uasyncio
 from sty import UART
 from sty import Parser
 
+# Initializing the message queues
+msgq_rtcm = deque((), 10)
+msgq_ublx = deque((), 10)
+
 # ---------------------------------------------------------------
 # RTCM message received callback
-# params[0] : Parser object
-# params[1] : Message object
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnRtcmMsg(params):
-    print(params[1])
+def OnRtcmMsg(message):
+    msgq_rtcm.append(message)
 
 # ---------------------------------------------------------------
 # UBX message received callback
-# params[0] : Parser object
-# params[1] : Message object
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnUbloxMsg(params):
-    parser = params[0]
-    parser.decode(params[1])
+def OnUbloxMsg(message):
+    msgq_ublx.append(message)
 
 # ---------------------------------------------------------------
 # UBX message decoded callback
@@ -54,13 +58,25 @@ xbee_hp = UART('XBEE_HP', 115200, dma=True, parser=[ublx, rtcm])
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
+async def app_proc():
     while True:
-        pass
+        # Decode the UBX messages
+        try:
+            ublx.decode(msgq_ublx.popleft())
+        except Exception:
+            pass
+
+        # Print the RTCM messages
+        try:
+            print(msgq_rtcm.popleft())
+        except Exception:
+            pass
 
 # ---------------------------------------------------------------
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

@@ -1,3 +1,4 @@
+from collections import deque
 import gc
 import json
 import binascii
@@ -13,21 +14,34 @@ from sty import Parser
 # COPY THE "config.json" FILE TO THE PYTHON DEVICE !!!
 # ---------------------------------------------------------------
 
-# ---------------------------------------------------------------
-# UBX message received callback
-# ---------------------------------------------------------------
-def OnUbloxMsg(params):
-    parser = params[0]
-    parser.decode(params[1])
+# Initializing the message queues
+msgq_zed1 = deque((), 10)
+msgq_zed2 = deque((), 10)
 
 # ---------------------------------------------------------------
-# UBX message decoded callback for ZED1
+# UBX message received callback of ZED1
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
+# ---------------------------------------------------------------
+def OnUbloxMsgZED1(message):
+    msgq_zed1.append(message)
+
+# ---------------------------------------------------------------
+# UBX message decoded callback of ZED1
 # ---------------------------------------------------------------
 def OnUbloxDecodedZED1(msgType, msgItems):
     print('ZED1: ', msgType, msgItems)
 
 # ---------------------------------------------------------------
-# UBX message decoded callback for ZED2
+# UBX message received callback of ZED2
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
+# ---------------------------------------------------------------
+def OnUbloxMsgZED2(message):
+    msgq_zed2.append(message)
+
+# ---------------------------------------------------------------
+# UBX message decoded callback of ZED2
 # ---------------------------------------------------------------
 def OnUbloxDecodedZED2(msgType, msgItems):
     print('ZED2: ', msgType, msgItems)
@@ -40,11 +54,11 @@ def b64encode(s):
 
 # ---------------------------------------------------------------
 # GSM link status callback
+# status[0] : Link
+# status[1] : QoS
+# status[2] : BER
 # ---------------------------------------------------------------
 def OnLinkStatus(status):
-    # status[0] : Link
-    # status[1] : QoS
-    # status[2] : BER
     pass
 
 # ---------------------------------------------------------------
@@ -58,7 +72,7 @@ led3 = sty.LED(3)
 # NTRIP Client informations
 # ---------------------------------------------------------------
 HOST_CONN_TIMEOUT = 30
-DATA_READ_TIMEOUT = 5
+DATA_READ_TIMEOUT = 10
 
 # Read from config file
 config = open('config.json')
@@ -82,20 +96,24 @@ header =\
 pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
+# Configure the UBX parsers
+ubx1 = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsgZED1, decall=OnUbloxDecodedZED1)
+ubx2 = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsgZED2, decall=OnUbloxDecodedZED2)
+
 # UART configuration of ZED1 without application buffer and UBX parser
-zed1 = UART('ZED1', 115200, rxbuf=0, dma=True, parser=Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecodedZED1))
+zed1 = UART('ZED1', 115200, dma=False, parser=ubx1)
 
 # UART configuration of ZED2 without application buffer and UBX parser
-zed2 = UART('ZED2', 115200, rxbuf=0, dma=True, parser=Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecodedZED2))
+zed2 = UART('ZED2', 115200, dma=False, parser=ubx2)
 
 # ---------------------------------------------------------------
 # GSM Module based socket interface
 # ---------------------------------------------------------------
-use_xbee_modem = False
+use_xbee_modem = True
 
 # Configure the network interface card (GSM)
 if use_xbee_modem:
-    pwr = Pin('PWR_XBEE', Pin.OUT_OD)
+    pwr = Pin('PWR_XBEE_HP', Pin.OUT_OD)
     nic = network.GSM(UART('XBEE_HP', 115200, rxbuf=1024, dma=False), pwr_pin=pwr, info=True)
 else:
     pwr = Pin('PWR_GSM', Pin.OUT_OD)
@@ -175,7 +193,7 @@ async def ntrip_proc(request):
 
         # Wait till connection
         while not nic.isconnected():
-            await uasyncio.sleep_ms(100)
+            await uasyncio.sleep(1)
 
         # Status info
         ipaddr = nic.ifconfig('ipaddr')
@@ -246,25 +264,35 @@ async def msg_proc():
         # Heart-beat for message processor task
         led3.toggle()
 
+        # Decode the ZED1 UBX messages
+        try:
+            ubx1.decode(msgq_zed1.popleft())
+        except Exception:
+            pass
+
+        # Decode the ZED2 UBX messages
+        try:
+            ubx2.decode(msgq_zed2.popleft())
+        except Exception:
+            pass
+
         # Yield to the other tasks
-        await uasyncio.sleep_ms(100)
+        await uasyncio.sleep_ms(20)
 
 # ---------------------------------------------------------------
 # Main process
 # ---------------------------------------------------------------
 async def main():
-    uasyncio.create_task(msg_proc())
-    while True:
-        await uasyncio.create_task(ntrip_proc(header))
+    task1 = uasyncio.create_task(ntrip_proc(header))
+    task2 = uasyncio.create_task(msg_proc())
+    await (task1, task2)
 
 # ---------------------------------------------------------------
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
     try:
-        loop = uasyncio.get_event_loop()
-        loop.run_until_complete(main())
+        uasyncio.run(main())
     except KeyboardInterrupt:
         print('Interrupted')
-    finally:
-        uasyncio.new_event_loop()
+        nic.disconnect()

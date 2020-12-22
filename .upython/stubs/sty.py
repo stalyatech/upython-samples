@@ -203,6 +203,9 @@ class Imu:
     def stat():
         pass
 
+    def ready():
+        pass
+
     def temp():
         pass
 

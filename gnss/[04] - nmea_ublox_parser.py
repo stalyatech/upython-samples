@@ -1,16 +1,20 @@
+from collections import deque
 import machine
-import _thread
+import uasyncio
 from sty import UART
 from sty import Parser
 
+# Initializing the message queues
+msgq_nmea = deque((), 10)
+msgq_ublx = deque((), 10)
+
 # ---------------------------------------------------------------
 # NMEA message received callback
-# params[0] : Parser object
-# params[1] : Message object
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnNmeaMsg(params):
-    parser = params[0]
-    parser.decode(params[1])
+def OnNmeaMsg(message):
+    msgq_nmea.append(message)
 
 # ---------------------------------------------------------------
 # NMEA message decoded callback
@@ -20,12 +24,11 @@ def OnNmeaDecoded(msgType, msgItems):
 
 # ---------------------------------------------------------------
 # UBX message received callback
-# params[0] : Parser object
-# params[1] : Message object
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnUbloxMsg(params):
-    parser = params[0]
-    parser.decode(params[1])
+def OnUbloxMsg(message):
+    msgq_ublx.append(message)
 
 # ---------------------------------------------------------------
 # UBX message decoded callback
@@ -51,13 +54,25 @@ zed1 = UART('ZED1', 115200, dma=True, parser=[nmea, ublx])
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
+async def app_proc():
     while True:
-        pass
+        # Decode the NMEA messages
+        try:
+            nmea.decode(msgq_nmea.popleft())
+        except Exception:
+            pass
+
+        # Decode the UBX messages
+        try:
+            ublx.decode(msgq_ublx.popleft())
+        except Exception:
+            pass
 
 # ---------------------------------------------------------------
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

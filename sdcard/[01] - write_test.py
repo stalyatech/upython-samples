@@ -1,24 +1,26 @@
+from collections import deque
 import machine
-import _thread
+import uasyncio
 from sty import UART
 from sty import Parser
 
+# Initializing the message queue
+msgq = deque((), 10)
+
 # ---------------------------------------------------------------
 # NMEA message received callback
-# params[0] : Parser object
-# params[1] : Message object
+# It is called from ISR!!!
+# Don't waste the CPU processing time.
 # ---------------------------------------------------------------
-def OnNmeaMsg(params):
-    s = params[1].decode('utf-8')
-    f.write(s + '\n')
-    print(s)
+def OnNmeaMsg(message):
+    msgq.append(message)
 
 # ---------------------------------------------------------------
 # File system usage
 # ---------------------------------------------------------------
 
 # Create the test file
-f = open('nmea_log.txt', 'w')
+fp = open('nmea_log.txt', 'w')
 
 # ---------------------------------------------------------------
 # GNSS Modules
@@ -34,13 +36,21 @@ zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxca
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
+async def app_proc():
     while True:
-        pass
+        # Get the queued message
+        try:
+            msg = msgq.popleft().decode('utf-8')
+            fp.write(msg + '\n')
+            print(msg)
+        except Exception:
+            pass
 
 # ---------------------------------------------------------------
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

@@ -1,7 +1,7 @@
 import os
-import sty
 import time
 import machine
+import sty
 
 # 1st FAT partition (2MB)
 p1 = sty.Flash(start=0, len=2*1024*1024)

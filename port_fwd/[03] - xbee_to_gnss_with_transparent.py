@@ -1,6 +1,6 @@
 import sty
 import machine
-import _thread
+import uasyncio
 from sty import UART
 
 # ---------------------------------------------------------------
@@ -43,7 +43,7 @@ xbee_lp.connect([zed1, zed2, zed3])
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
+async def app_proc():
     while True:
         pass
 
@@ -51,5 +51,7 @@ def app_proc():
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

@@ -1,5 +1,5 @@
+import uasyncio
 import sty
-import _thread
 
 # ---------------------------------------------------------------
 # Prints roll, pitch, yaw
@@ -25,8 +25,11 @@ ahrs = imu.DCM(yawfix=True, kp_rollpitch=0.2, ki_rollpitch=0.00005, kp_yaw=1.2, 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
-def app_proc():
+async def app_proc():
     while True:
+        # Wait for sensor ready
+        while not imu.ready():
+            pass
         # Read the unfiltered values
         # ax, ay, az, gx, gy, gz, dt
         vals = imu.read()
@@ -37,5 +40,7 @@ def app_proc():
 # Application entry point
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    # Start the application process
-    _thread.start_new_thread(app_proc, ())
+    try:
+        uasyncio.run(app_proc())
+    except KeyboardInterrupt:
+        print('Interrupted')

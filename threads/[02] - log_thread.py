@@ -1,13 +1,13 @@
-from collections import deque
 import machine
 import uasyncio
-import sty
+from sty import LED
 from sty import UART
+from sty import Queue
 from sty import Parser
 
-# Initializing the message queues
-msgq_zed1 = deque((), 10)
-msgq_zed2 = deque((), 10)
+# Initialize the static message queues
+msgq_zed1 = Queue(count=10, size=128)
+msgq_zed2 = Queue(count=10, size=128)
 
 # ---------------------------------------------------------------
 # NMEA message received callback of ZED1
@@ -15,7 +15,10 @@ msgq_zed2 = deque((), 10)
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnNmeaMsgZED1(message):
-    msgq_zed1.append(message)
+    try:
+        msgq_zed1.append(message)
+    except IndexError:
+        pass
 
 # ---------------------------------------------------------------
 # NMEA message received callback of ZED2
@@ -23,15 +26,18 @@ def OnNmeaMsgZED1(message):
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnNmeaMsgZED2(message):
-    msgq_zed2.append(message)
+    try:
+        msgq_zed2.append(message)
+    except IndexError:
+        pass
 
 # ---------------------------------------------------------------
 # On-Board LEDs
 # ---------------------------------------------------------------
 
-led1 = sty.LED(1)
-led2 = sty.LED(2)
-led3 = sty.LED(3)
+led1 = LED(1)
+led2 = LED(2)
+led3 = LED(3)
 
 # ---------------------------------------------------------------
 # File system usage
@@ -52,8 +58,8 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZEDs without application buffer and NMEA parser
-zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED1))
-zed2 = UART('ZED2', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsgZED2))
+zed1 = UART('ZED1', 460800, dma=True, parser=Parser(Parser.NMEA, rxbuf=128, rxcall=OnNmeaMsgZED1))
+zed2 = UART('ZED2', 460800, dma=True, parser=Parser(Parser.NMEA, rxbuf=128, rxcall=OnNmeaMsgZED2))
 
 # ---------------------------------------------------------------
 # Thread #1 process
@@ -65,19 +71,19 @@ async def thread1_proc():
     while True:
         # Write the ZED1 NMEA messages
         try:
-            msg = msgq_zed1.popleft().decode('utf-8')
-            s = 'ZED1: ' + msg
-            fp1.write(s + '\n')
-            print(s)
+            msg = 'ZED1: ' + msgq_zed1.popleft().decode('utf-8')
+            fp1.write(msg)
+            fp1.flush()
+            print(msg[:-2])
         except Exception:
             pass
 
         # Write the ZED2 NMEA messages
         try:
-            msg = msgq_zed2.popleft().decode('utf-8')
-            s = 'ZED2: ' + msg
-            fp2.write(s + '\n')
-            print(s)
+            msg = 'ZED2: ' + msgq_zed2.popleft().decode('utf-8')
+            fp2.write(msg)
+            fp2.flush()
+            print(msg[:-2])
         except Exception:
             pass
 

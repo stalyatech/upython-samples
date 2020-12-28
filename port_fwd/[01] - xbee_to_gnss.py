@@ -1,15 +1,15 @@
-import sty
 import machine
 import uasyncio
+from sty import LED
 from sty import UART
 
 # ---------------------------------------------------------------
 # On-Board LEDs
 # ---------------------------------------------------------------
 
-led1 = sty.LED(1)
-led2 = sty.LED(2)
-led3 = sty.LED(3)
+led1 = LED(1)
+led2 = LED(2)
+led3 = LED(3)
 
 # ---------------------------------------------------------------
 # ZED1 message received callback
@@ -57,9 +57,9 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZEDs
-zed1 = UART('ZED1', 115200)
-zed2 = UART('ZED2', 115200)
-zed3 = UART('ZED3', 115200)
+zed1 = UART('ZED1', 460800, dma=True)
+zed2 = UART('ZED2', 460800, dma=True)
+zed3 = UART('ZED3', 460800, dma=True)
 
 # ---------------------------------------------------------------
 # XBEE Expansions

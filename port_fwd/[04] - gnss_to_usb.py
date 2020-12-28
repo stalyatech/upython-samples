@@ -1,20 +1,20 @@
-from collections import deque
 import machine
 import uasyncio
-import sty
+from sty import LED
 from sty import UART
+from sty import Queue
 from sty import Parser
 
-# Initializing the message queue
-msgq = deque((), 10)
+# Initialize the static message queue
+msgq = Queue(count=10, size=128)
 
 # ---------------------------------------------------------------
 # On-Board LEDs
 # ---------------------------------------------------------------
 
-led1 = sty.LED(1)
-led2 = sty.LED(2)
-led3 = sty.LED(3)
+led1 = LED(1)
+led2 = LED(2)
+led3 = LED(3)
 
 # ---------------------------------------------------------------
 # NMEA message received callback
@@ -22,8 +22,11 @@ led3 = sty.LED(3)
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnNmeaMsg(message):
-    msgq.append(message)
-    led2.toggle()
+    try:
+        msgq.append(message)
+    except IndexError:
+        pass
+    led3.toggle()
 
 # ---------------------------------------------------------------
 # NMEA message decoded callback
@@ -40,16 +43,17 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZED1 without application buffer and NMEA parser
-zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsg, decall=OnDecodedMsg))
+zed1 = UART('ZED1', 460800, dma=True, parser=Parser(Parser.NMEA, rxbuf=128, rxcall=OnNmeaMsg, decall=OnDecodedMsg))
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
 async def app_proc():
     while True:
-        # Get the NMEA messages
+        # Print the NMEA messages
         try:
-            print(msgq.popleft().decode('utf-8'))
+            msg = msgq.popleft().decode('utf-8')
+            print(msg[:-2])
         except Exception:
             pass
 

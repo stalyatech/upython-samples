@@ -1,11 +1,11 @@
-from collections import deque
 import machine
 import uasyncio
 from sty import UART
+from sty import Queue
 from sty import Parser
 
-# Initializing the message queue
-msgq = deque((), 10)
+# Initialize the static message queue
+msgq = Queue(count=10, size=256)
 
 # ---------------------------------------------------------------
 # UBX message received callback
@@ -13,7 +13,10 @@ msgq = deque((), 10)
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnUbloxMsg(message):
-    msgq.append(message)
+    try:
+        msgq.append(message)
+    except IndexError:
+        pass
 
 # ---------------------------------------------------------------
 # UBX message decoded callback
@@ -30,10 +33,10 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # Configure the UBX parser
-ubx = Parser(Parser.UBX, rxbuf=1024, rxcall=OnUbloxMsg, decall=OnUbloxDecoded)
+ubx = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecoded)
 
 # UART configuration of ZED1 without application buffer and UBX parser
-zed1 = UART('ZED1', 115200, dma=True, parser=ubx)
+zed1 = UART('ZED1', 460800, dma=True, parser=ubx)
 
 # ---------------------------------------------------------------
 # Application process
@@ -43,7 +46,7 @@ async def app_proc():
         # Decode the UBX messages
         try:
             ubx.decode(msgq.popleft())
-        except Exception:
+        except IndexError:
             pass
 
 # ---------------------------------------------------------------

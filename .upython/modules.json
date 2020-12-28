@@ -1,26 +1,33 @@
 {	"firmware": 
 	{
-		"machine": "simpleRTK-SBC with STM32F745", 
-		"firmware": "pySBC 1.13.0 with FW1.5.7-225", 
-		"nodename": "pySBC", 
+		"ver": "1.13.0 with FW2.0.3-388", 
+		"port": "pySBC", 
+		"arch": "armv7emdp", 
+		"sysname": "pySBC", 
+		"release": "1.13.0 with FW2.0.3", 
+		"name": "micropython", 
+		"mpy": 8709, 
 		"version": "1.13.0", 
-		"release": "1.13.0 with FW1.5.7", 
-		"sysname": "pySBC"
+		"machine": "simpleRTK-SBC-R02 with STM32H743", 
+		"build": "388", 
+		"nodename": "pySBC", 
+		"platform": "pySBC", 
+		"family": "micropython"
+	},
 	
-		
 	"stubber": 
-	{
-		"version": "1.3.4"
+	{	
+		"version": "1.3.9"
 	},
 	
 	"modules" :
 	[
-		{"file": "/stubs/uasyncio/lock.py", "module": "uasyncio.lock"},
-		{"file": "/stubs/uasyncio/stream.py", "module": "uasyncio.stream"},
 		{"file": "/stubs/uasyncio/__init__.py", "module": "uasyncio.__init__"},
-		{"file": "/stubs/uasyncio/core.py", "module": "uasyncio.core"},
+		{"file": "/stubs/uasyncio/core.py", "module": "uasyncio.core"}, 
 		{"file": "/stubs/uasyncio/event.py", "module": "uasyncio.event"},
 		{"file": "/stubs/uasyncio/funcs.py", "module": "uasyncio.funcs"},
+		{"file": "/stubs/uasyncio/lock.py", "module": "uasyncio.lock"},
+		{"file": "/stubs/uasyncio/stream.py", "module": "uasyncio.stream"},
 		{"file": "/stubs/_thread.py", "module": "_thread"},
 		{"file": "/stubs/array.py", "module": "array"},
 		{"file": "/stubs/binascii.py", "module": "binascii"},
@@ -34,6 +41,8 @@
 		{"file": "/stubs/heapq.py", "module": "heapq"},
 		{"file": "/stubs/io.py", "module": "io"},
 		{"file": "/stubs/json.py", "module": "json"},
+		{"file": "/stubs/lcd160cr.py", "module": "lcd160cr"},
+		{"file": "/stubs/lcd160cr_test.py", "module": "lcd160cr_test"},
 		{"file": "/stubs/logging.py", "module": "logging"},
 		{"file": "/stubs/machine.py", "module": "machine"},
 		{"file": "/stubs/math.py", "module": "math"},
@@ -46,9 +55,12 @@
 		{"file": "/stubs/select.py", "module": "select"},
 		{"file": "/stubs/socket.py", "module": "socket"},
 		{"file": "/stubs/ssl.py", "module": "ssl"},
+		{"file": "/stubs/stm.py", "module": "stm"},
 		{"file": "/stubs/struct.py", "module": "struct"},
+		{"file": "/stubs/sty.py", "module": "sty"},
 		{"file": "/stubs/sys.py", "module": "sys"},
 		{"file": "/stubs/time.py", "module": "time"},
+		{"file": "/stubs/uarray.py", "module": "uarray"},
 		{"file": "/stubs/ubinascii.py", "module": "ubinascii"},
 		{"file": "/stubs/ucollections.py", "module": "ucollections"},
 		{"file": "/stubs/ucryptolib.py", "module": "ucryptolib"},
@@ -58,6 +70,7 @@
 		{"file": "/stubs/uheapq.py", "module": "uheapq"},
 		{"file": "/stubs/uio.py", "module": "uio"},
 		{"file": "/stubs/ujson.py", "module": "ujson"},
+		{"file": "/stubs/umachine.py", "module": "umachine"},
 		{"file": "/stubs/uos.py", "module": "uos"},
 		{"file": "/stubs/urandom.py", "module": "urandom"},
 		{"file": "/stubs/ure.py", "module": "ure"},
@@ -65,13 +78,12 @@
 		{"file": "/stubs/usocket.py", "module": "usocket"},
 		{"file": "/stubs/ussl.py", "module": "ussl"},
 		{"file": "/stubs/ustruct.py", "module": "ustruct"},
+		{"file": "/stubs/usys.py", "module": "usys"},
 		{"file": "/stubs/utime.py", "module": "utime"},
 		{"file": "/stubs/utimeq.py", "module": "utimeq"},
 		{"file": "/stubs/uwebsocket.py", "module": "uwebsocket"},
 		{"file": "/stubs/uzlib.py", "module": "uzlib"},
 		{"file": "/stubs/websocket.py", "module": "websocket"},
-		{"file": "/stubs/zlib.py", "module": "zlib"},
-		{"file": "/stubs/sty.py", "module": "sty"},
-		{"file": "/stubs/stm.py", "module": "stm"}
+		{"file": "/stubs/zlib.py", "module": "zlib"}
 	]
 }

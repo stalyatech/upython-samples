@@ -1,12 +1,12 @@
-from collections import deque
 import machine
 import uasyncio
 from sty import UART
+from sty import Queue
 from sty import Parser
 
-# Initializing the message queues
-msgq_nmea = deque((), 10)
-msgq_ublx = deque((), 10)
+# Initialize the static message queues
+msgq_nmea = Queue(count=10, size=128)
+msgq_ublx = Queue(count=10, size=256)
 
 # ---------------------------------------------------------------
 # NMEA message received callback
@@ -14,7 +14,10 @@ msgq_ublx = deque((), 10)
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnNmeaMsg(message):
-    msgq_nmea.append(message)
+    try:
+        msgq_nmea.append(message)
+    except IndexError:
+        pass
 
 # ---------------------------------------------------------------
 # NMEA message decoded callback
@@ -28,7 +31,10 @@ def OnNmeaDecoded(msgType, msgItems):
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnUbloxMsg(message):
-    msgq_ublx.append(message)
+    try:
+        msgq_ublx.append(message)
+    except IndexError:
+        pass
 
 # ---------------------------------------------------------------
 # UBX message decoded callback
@@ -45,11 +51,11 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # Parser configurations
-nmea = Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsg, decall=OnNmeaDecoded)
+nmea = Parser(Parser.NMEA, rxbuf=128, rxcall=OnNmeaMsg, decall=OnNmeaDecoded)
 ublx = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecoded)
 
 # UART configuration of ZED1 without application buffer and multiple parsers!
-zed1 = UART('ZED1', 115200, dma=True, parser=[nmea, ublx])
+zed1 = UART('ZED1', 460800, dma=True, parser=[nmea, ublx])
 
 # ---------------------------------------------------------------
 # Application process
@@ -59,13 +65,13 @@ async def app_proc():
         # Decode the NMEA messages
         try:
             nmea.decode(msgq_nmea.popleft())
-        except Exception:
+        except IndexError:
             pass
 
         # Decode the UBX messages
         try:
             ublx.decode(msgq_ublx.popleft())
-        except Exception:
+        except IndexError:
             pass
 
 # ---------------------------------------------------------------

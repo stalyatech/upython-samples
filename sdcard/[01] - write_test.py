@@ -1,11 +1,11 @@
-from collections import deque
 import machine
 import uasyncio
 from sty import UART
+from sty import Queue
 from sty import Parser
 
-# Initializing the message queue
-msgq = deque((), 10)
+# Initialize the static message queue
+msgq = Queue(count=10, size=128)
 
 # ---------------------------------------------------------------
 # NMEA message received callback
@@ -13,7 +13,10 @@ msgq = deque((), 10)
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnNmeaMsg(message):
-    msgq.append(message)
+    try:
+        msgq.append(message)
+    except IndexError:
+        pass
 
 # ---------------------------------------------------------------
 # File system usage
@@ -31,7 +34,7 @@ pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
 # UART configuration of ZED without application buffer and NMEA parser
-zed1 = UART('ZED1', 115200, dma=True, parser=Parser(Parser.NMEA, rxbuf=256, rxcall=OnNmeaMsg))
+zed1 = UART('ZED1', 460800, dma=True, parser=Parser(Parser.NMEA, rxbuf=128, rxcall=OnNmeaMsg))
 
 # ---------------------------------------------------------------
 # Application process
@@ -41,8 +44,9 @@ async def app_proc():
         # Get the queued message
         try:
             msg = msgq.popleft().decode('utf-8')
-            fp.write(msg + '\n')
-            print(msg)
+            fp.write(msg)
+            fp.flush()
+            print(msg[:-2])
         except Exception:
             pass
 

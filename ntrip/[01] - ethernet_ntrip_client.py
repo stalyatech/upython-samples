@@ -1,21 +1,21 @@
-from collections import deque
 import gc
 import json
 import binascii
 import network
 import machine
 import uasyncio
-import sty
+from sty import LED
 from sty import UART
+from sty import Queue
 from sty import Parser
 
 # ---------------------------------------------------------------
 # COPY THE "config.json" FILE TO THE PYTHON DEVICE !!!
 # ---------------------------------------------------------------
 
-# Initializing the message queues
-msgq_zed1 = deque((), 10)
-msgq_zed2 = deque((), 10)
+# Initialize the static message queues
+msgq_zed1 = Queue(count=10, size=256)
+msgq_zed2 = Queue(count=10, size=256)
 
 # ---------------------------------------------------------------
 # UBX message received callback of ZED1
@@ -23,7 +23,10 @@ msgq_zed2 = deque((), 10)
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnUbloxMsgZED1(message):
-    msgq_zed1.append(message)
+    try:
+        msgq_zed1.append(message)
+    except IndexError:
+        pass
 
 # ---------------------------------------------------------------
 # UBX message decoded callback of ZED1
@@ -37,7 +40,10 @@ def OnUbloxDecodedZED1(msgType, msgItems):
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnUbloxMsgZED2(message):
-    msgq_zed2.append(message)
+    try:
+        msgq_zed2.append(message)
+    except IndexError:
+        pass
 
 # ---------------------------------------------------------------
 # UBX message decoded callback of ZED2
@@ -64,9 +70,9 @@ def OnLinkStatus(link):
 # ---------------------------------------------------------------
 # On-Board LEDs
 # ---------------------------------------------------------------
-led1 = sty.LED(1)
-led2 = sty.LED(2)
-led3 = sty.LED(3)
+led1 = LED(1)
+led2 = LED(2)
+led3 = LED(3)
 
 # ---------------------------------------------------------------
 # NTRIP Client informations
@@ -101,10 +107,10 @@ ubx1 = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsgZED1, decall=OnUbloxDecode
 ubx2 = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsgZED2, decall=OnUbloxDecodedZED2)
 
 # UART configuration of ZED1 without application buffer and UBX parser
-zed1 = UART('ZED1', 115200, dma=True, parser=ubx1)
+zed1 = UART('ZED1', 460800, dma=True, parser=ubx1)
 
 # UART configuration of ZED2 without application buffer and UBX parser
-zed2 = UART('ZED2', 115200, dma=True, parser=ubx2)
+zed2 = UART('ZED2', 460800, dma=True, parser=ubx2)
 
 # ---------------------------------------------------------------
 # Ethernet based socket interface
@@ -217,7 +223,7 @@ async def ntrip_proc(request):
                         # Send the data to the ZEDs
                         if len(data) > 0:
                             zed1.send(data)
-                            zed2.send(data)
+                            #zed2.send(data)
                         else:
                             raise Exception('Data Error!')
 
@@ -226,7 +232,7 @@ async def ntrip_proc(request):
                             raise Exception('Link Error!')
 
                         # Suspend for a while
-                        await uasyncio.sleep_ms(100)
+                        await uasyncio.sleep_ms(50)
 
                 # Exception while data read!
                 except Exception as Exc:
@@ -264,13 +270,13 @@ async def msg_proc():
         # Decode the ZED1 UBX messages
         try:
             ubx1.decode(msgq_zed1.popleft())
-        except Exception:
+        except IndexError:
             pass
 
         # Decode the ZED2 UBX messages
         try:
             ubx2.decode(msgq_zed2.popleft())
-        except Exception:
+        except IndexError:
             pass
 
         # Yield to the other tasks

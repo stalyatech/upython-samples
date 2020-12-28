@@ -1,12 +1,12 @@
-from collections import deque
 import machine
 import uasyncio
 from sty import UART
+from sty import Queue
 from sty import Parser
 
-# Initializing the message queues
-msgq_rtcm = deque((), 10)
-msgq_ublx = deque((), 10)
+# Initialize the static message queues
+msgq_rtcm = Queue(count=10, size=1024)
+msgq_ublx = Queue(count=10, size=256)
 
 # ---------------------------------------------------------------
 # RTCM message received callback
@@ -14,7 +14,10 @@ msgq_ublx = deque((), 10)
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnRtcmMsg(message):
-    msgq_rtcm.append(message)
+    try:
+        msgq_rtcm.append(message)
+    except IndexError:
+        pass
 
 # ---------------------------------------------------------------
 # UBX message received callback
@@ -22,7 +25,10 @@ def OnRtcmMsg(message):
 # Don't waste the CPU processing time.
 # ---------------------------------------------------------------
 def OnUbloxMsg(message):
-    msgq_ublx.append(message)
+    try:
+        msgq_ublx.append(message)
+    except IndexError:
+        pass
 
 # ---------------------------------------------------------------
 # UBX message decoded callback
@@ -38,8 +44,8 @@ def OnUbloxDecoded(msgType, msgItems):
 pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
-# UART configuration of ZED without application buffer and RTCM parser
-zed1 = UART('ZED1', 115200, dma=True)
+# UART configuration of ZED without application buffer
+zed1 = UART('ZED1', 460800, dma=True)
 
 # ---------------------------------------------------------------
 # XBEE Expansions
@@ -50,7 +56,7 @@ pwr.on(machine.POWER_XBEE)
 
 # Parser configurations
 ublx = Parser(Parser.UBX, rxbuf=256, rxcall=OnUbloxMsg, decall=OnUbloxDecoded)
-rtcm = Parser(Parser.RTCM, rxbuf=2048, rxcall=OnRtcmMsg)
+rtcm = Parser(Parser.RTCM, rxbuf=1024, rxcall=OnRtcmMsg)
 
 # UART configuration of XBEE HP without application buffer and multiple parsers!
 xbee_hp = UART('XBEE_HP', 115200, dma=True, parser=[ublx, rtcm])
@@ -63,13 +69,13 @@ async def app_proc():
         # Decode the UBX messages
         try:
             ublx.decode(msgq_ublx.popleft())
-        except Exception:
+        except IndexError:
             pass
 
         # Print the RTCM messages
         try:
             print(msgq_rtcm.popleft())
-        except Exception:
+        except IndexError:
             pass
 
 # ---------------------------------------------------------------

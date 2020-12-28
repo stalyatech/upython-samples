@@ -10,7 +10,7 @@ async def app_proc():
         line = fp.readline()
         # Read the file line by line
         while line:
-            print(line)
+            print(line[:-2])
             line = fp.readline()
     print('End of file')
 

@@ -1,6 +1,6 @@
-import sty
 import machine
 import uasyncio
+from sty import LED
 from sty import UART
 
 # ---------------------------------------------------------------
@@ -34,16 +34,16 @@ def OnDataRecvFromXBeeHP(message):
 # On-Board LEDs
 # ---------------------------------------------------------------
 
-led1 = sty.LED(1)
-led2 = sty.LED(2)
-led3 = sty.LED(3)
+led1 = LED(1)
+led2 = LED(2)
+led3 = LED(3)
 
 # ---------------------------------------------------------------
 # GNSS Modules
 # ---------------------------------------------------------------
 
 # UART configuration of ZED
-zed1 = UART('ZED1', 115200, dma=True)
+zed1 = UART('ZED1', 460800, dma=True)
 
 # ---------------------------------------------------------------
 # XBEE Expansions

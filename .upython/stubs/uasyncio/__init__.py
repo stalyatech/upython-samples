@@ -159,7 +159,9 @@ def get_event_loop():
 def new_event_loop():
     pass
 
-open_connection = None
+def open_connection():
+    pass
+
 def run():
     pass
 
@@ -184,7 +186,8 @@ def ticks_add():
 def ticks_diff():
     pass
 
-wait_for = None
-def wait_for_ms():
+def wait_for():
     pass
 
+def wait_for_ms():
+    pass

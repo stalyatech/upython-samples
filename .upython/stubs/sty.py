@@ -160,19 +160,31 @@ class I2C:
     def send():
         pass
 
-
 class Imu:
     ''
     ACCEL_X = 0
     ACCEL_Y = 1
     ACCEL_Z = 2
-    DCM = None
-    DT = 6
     GYRO_X = 3
     GYRO_Y = 4
     GYRO_Z = 5
-    Madgwick = None
-    Mahony = None
+    DT = 6
+
+    class Madgwick:
+        ''
+        def update(self, data):
+            pass
+
+    class Mahony:
+        ''
+        def update(self, data):
+            pass
+
+    class DCM:
+        ''
+        def update(self, data, yaw):
+            pass
+
     def ax():
         pass
 

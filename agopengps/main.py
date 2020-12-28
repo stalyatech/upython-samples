@@ -6,6 +6,7 @@ import network
 import machine
 import uasyncio
 from sty import Imu
+from sty import Pin
 from sty import UART
 from sty import Queue
 from sty import Parser
@@ -26,9 +27,7 @@ class NtripClient:
         self.__conn_timeout = conn_timeout
         self.__read_timeout = read_timeout
         self.__on_data_recv = on_data_recv
-
-        # Configure the network interface card (Ethernet)
-        self.__nic = network.LAN(on_link_stat)
+        self.__on_link_stat = on_link_stat
 
         # Read from config file
         fd = open('config.json')
@@ -113,29 +112,33 @@ class NtripClient:
             raise Exc
 
     # ---------------------------------------------------------------
-    # Background process
+    # Background process for ethernet connection
     # ---------------------------------------------------------------
-    async def __process(self):
+    async def __process_eth(self):
+
+        # Configure the network interface card (Ethernet)
+        nic = network.LAN(self.__on_link_stat)
+
         while True:
             try:
                 # Print info
                 print('\r\nWaiting for link-up')
 
                 # Activate the interface
-                self.__nic.active(True)
+                nic.active(True)
 
                 # Wait for ethernet link up
-                while self.__nic.status() == 0:
+                while nic.status() == 0:
                     await uasyncio.sleep(1)
 
                 # Print info
                 print('DHCP started')
 
                 # Configure the DHCP client and get IP address
-                self.__nic.ifconfig(mode='dhcp')
+                nic.ifconfig(mode='dhcp')
 
                 # Status info
-                ipaddr = self.__nic.ifconfig('ipaddr')
+                ipaddr = nic.ifconfig('ipaddr')
                 print('DHCP done: %s\r\n' % ipaddr)
 
                 try:
@@ -161,7 +164,7 @@ class NtripClient:
                                 raise Exception('Data Error!')
 
                             # Check the link status
-                            if self.__nic.status() == 0:
+                            if nic.status() == 0:
                                 raise Exception('Link Error!')
 
                             # Suspend for a while
@@ -178,31 +181,115 @@ class NtripClient:
                         print('Stream Closed!')
 
                         # De-activate the interface
-                        self.__nic.active(False)
+                        nic.active(False)
 
                 # Exception while open connection
                 except Exception:
                     # De-activate the interface
-                    self.__nic.active(False)
+                    nic.active(False)
 
             # Exception while Link Up/IP address get
             except Exception as Exc:
                 print(Exc)
 
                 # De-activate the interface
-                self.__nic.active(False)
+                nic.active(False)
+
+    # ---------------------------------------------------------------
+    # Background process for gsm connection
+    # ---------------------------------------------------------------
+    async def __process_gsm(self):
+        # Configure the network interface card (GSM)
+        pwr = Pin('PWR_GSM', Pin.OUT_OD)
+        mon = Pin('GSM_MON', Pin.IN, Pin.PULL_DOWN)
+        nic = network.GSM(UART('GSM', 115200, flow=UART.RTS|UART.CTS, rxbuf=1024, dma=True), pwr_pin=pwr, mon_pin=mon, info=True)
+
+        while True:
+            # Print info
+            print('\r\nWaiting for link-up')
+
+            # Configure the GSM parameters
+            nic.config(user='gprs', pwd='gprs', apn='internet', pin='1234')
+
+            # Connect to the gsm network
+            nic.connect()
+
+            # Wait till connection
+            while not nic.isconnected():
+                await uasyncio.sleep(1)
+
+            # Status info
+            ipaddr = nic.ifconfig('ipaddr')
+            print('GSM connection done: %s' % ipaddr)
+
+            # GSM info
+            print('IMEI Number: %s' % nic.imei())
+            print('IMSI Number: %s' % nic.imsi())
+            qos = nic.qos()
+            print('Signal Quality: %d,%d' % (qos[0], qos[1]))
+
+            try:
+                # Connect to the host
+                reader, writer = await self.__connect()
+
+                try:
+                    # Get the RTCM data from the host and redirect it to the ZEDs
+                    while True:
+
+                        # There are some length bytes at the head here but it actually
+                        # seems more robust to simply let the higher level RTCMv3 parser
+                        # frame everything itself and bin the garbage as required.
+
+                        # Get the RTCM data from NTRIP caster
+                        data = await uasyncio.wait_for(reader.read(1024), timeout=self.__read_timeout)
+
+                        # Send the data to the caller
+                        if len(data) > 0:
+                            if self.__on_data_recv:
+                                self.__on_data_recv(data)
+                        else:
+                            raise Exception('Data Error!')
+
+                        # Check the link status
+                        if not nic.isconnected():
+                            raise Exception('Link Error!')
+
+                        # Suspend for a while
+                        await uasyncio.sleep_ms(50)
+
+                # Exception while data read!
+                except Exception as Exc:
+                    print(Exc)
+                finally:
+
+                    # Close the stream
+                    writer.close()
+                    await writer.wait_closed()
+                    print('Stream Closed!')
+
+                    # Disconnect from the network
+                    nic.disconnect()
+
+            # Exception while open connection
+            except Exception:
+                # Disconnect from the network
+                nic.disconnect()
 
     # -----------------------------------------------------------
     # Start the background process
     # -----------------------------------------------------------
-    def start(self):
-        return uasyncio.create_task(self.__process())
+    def start(self, nic):
+        if nic == 'eth':
+            return uasyncio.create_task(self.__process_eth())
+        if nic == 'gsm':
+            return uasyncio.create_task(self.__process_gsm())
+        return None
 
     # -----------------------------------------------------------
     # Link up/down
     # -----------------------------------------------------------
     def active(self, status):
-        self.__nic.active(status)
+        pass
 
 # ---------------------------------------------------------------
 # GNSS Based AHRS Fiter
@@ -236,11 +323,11 @@ class AHRSFilter:
     # -----------------------------------------------------------
     # Set the accuracy, heading and carrsoln
     # -----------------------------------------------------------
-    def setValues(self, accuracy, heading, carrsoln):
+    def setValues(self, heading, accuracy, carrsoln):
         self.__accuracy = accuracy
         self.__carrsoln = carrsoln
-        if self.__carrsoln == 2:
-            self.__heading = -heading
+        #if self.__carrsoln == 2:
+        self.__heading = -heading * 0.00001
 
     # -----------------------------------------------------------
     # Get the euler angles
@@ -267,7 +354,7 @@ class AHRSFilter:
     # Prepare heading NMEA sentence
     # -----------------------------------------------------------
     def getHeading(self):
-        hdt = "$GPHDT," + str(self.__heading) + ",T*"
+        hdt = '$GPHDT,{:.3f},T*'.format(self.__yaw * -57.29577951)
         hdt = hdt + self.__chksm(hdt)
         return hdt
 
@@ -289,8 +376,8 @@ class AgOpenGps:
     def __init__(self, on_rtcm_msg=None, on_link_stat=None):
 
         # Parser configurations
-        self.__nmea = Parser(Parser.NMEA, rxbuf=256, rxcall=self.__nmeaMsg, decall=self.__nmeaDecoded)
-        self.__ublx = Parser(Parser.UBX, rxbuf=256, rxcall=self.__ubloxMsg, decall=self.__ubloxDecoded)
+        self.__nmea = Parser(Parser.NMEA, rxbuf=256, rxcall=self.__on_nmea_msg, decall=self.__on_nmea_dec)
+        self.__ublx = Parser(Parser.UBX, rxbuf=256, rxcall=self.__on_ublx_msg, decall=self.__on_ublx_dec)
 
         # NTRIP client
         self.__ntrip = NtripClient(on_data_recv=on_rtcm_msg, on_link_stat=on_link_stat)
@@ -354,7 +441,7 @@ class AgOpenGps:
     # Don't waste the CPU processing time.
     # -----------------------------------------------------------
     @staticmethod
-    def __nmeaMsg(message):
+    def __on_nmea_msg(message):
         try:
             AgOpenGps.__msgq_nmea.append(message)
         except IndexError:
@@ -364,7 +451,7 @@ class AgOpenGps:
     # NMEA message decoded callback
     # ---------------------------------------------------------------
     @staticmethod
-    def __nmeaDecoded(msgType, msgItems):
+    def __on_nmea_dec(msgType, msgItems):
         pass
 
     # ---------------------------------------------------------------
@@ -373,7 +460,7 @@ class AgOpenGps:
     # Don't waste the CPU processing time.
     # ---------------------------------------------------------------
     @staticmethod
-    def __ubloxMsg(message):
+    def __on_ublx_msg(message):
         try:
             AgOpenGps.__msgq_ublx.append(message)
         except IndexError:
@@ -382,8 +469,16 @@ class AgOpenGps:
     # ---------------------------------------------------------------
     # UBX message decoded callback
     # ---------------------------------------------------------------
+    # NAV-RELPOSNED
+    # msgItems[0] : North component of relative position vector
+    # msgItems[1] : East component of relative position vector
+    # msgItems[2] : Down component of relative position vector
+    # msgItems[3] : Heading of the relative position vector
+    # msgItems[4] : Accuracy of heading of the relative position vector
+    # msgItems[5] : Flags
+    # ---------------------------------------------------------------
     @staticmethod
-    def __ubloxDecoded(msgType, msgItems):
+    def __on_ublx_dec(msgType, msgItems):
         if msgType == 'NAV_RELPOSNED':
             carrsoln = (msgItems[5] & 0x18) >> 3
             AgOpenGps.__ahrs.setValues(msgItems[3], msgItems[4], carrsoln)
@@ -391,8 +486,8 @@ class AgOpenGps:
     # -----------------------------------------------------------
     # Start the background process
     # -----------------------------------------------------------
-    def start(self):
-        task1 = self.__ntrip.start()
+    def start(self, nic):
+        task1 = self.__ntrip.start(nic)
         task2 = uasyncio.create_task(self.__process())
         return (task1, task2)
 
@@ -436,7 +531,7 @@ agOpen = AgOpenGps(on_rtcm_msg=OnRtcmMsg, on_link_stat=OnLinkStatus)
 # Main process
 # ---------------------------------------------------------------
 async def main():
-    await agOpen.start()
+    await agOpen.start('gsm')
 
 # ---------------------------------------------------------------
 # Application entry point

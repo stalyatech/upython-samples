@@ -28,6 +28,8 @@ class NtripClient:
         self.__read_timeout = read_timeout
         self.__on_data_recv = on_data_recv
         self.__on_link_stat = on_link_stat
+        self.__eth_nic = None
+        self.__gsm_nic = None
 
         # Read from config file
         fd = open('config.json')
@@ -115,30 +117,26 @@ class NtripClient:
     # Background process for ethernet connection
     # ---------------------------------------------------------------
     async def __process_eth(self):
-
-        # Configure the network interface card (Ethernet)
-        nic = network.LAN(self.__on_link_stat)
-
         while True:
             try:
                 # Print info
                 print('\r\nWaiting for link-up')
 
                 # Activate the interface
-                nic.active(True)
+                self.__eth_nic.active(True)
 
                 # Wait for ethernet link up
-                while nic.status() == 0:
+                while self.__eth_nic.status() == 0:
                     await uasyncio.sleep(1)
 
                 # Print info
                 print('DHCP started')
 
                 # Configure the DHCP client and get IP address
-                nic.ifconfig(mode='dhcp')
+                self.__eth_nic.ifconfig(mode='dhcp')
 
                 # Status info
-                ipaddr = nic.ifconfig('ipaddr')
+                ipaddr = self.__eth_nic.ifconfig('ipaddr')
                 print('DHCP done: %s\r\n' % ipaddr)
 
                 try:
@@ -164,7 +162,7 @@ class NtripClient:
                                 raise Exception('Data Error!')
 
                             # Check the link status
-                            if nic.status() == 0:
+                            if self.__eth_nic.status() == 0:
                                 raise Exception('Link Error!')
 
                             # Suspend for a while
@@ -181,51 +179,46 @@ class NtripClient:
                         print('Stream Closed!')
 
                         # De-activate the interface
-                        nic.active(False)
+                        self.__eth_nic.active(False)
 
                 # Exception while open connection
                 except Exception:
                     # De-activate the interface
-                    nic.active(False)
+                    self.__eth_nic.active(False)
 
             # Exception while Link Up/IP address get
             except Exception as Exc:
                 print(Exc)
 
                 # De-activate the interface
-                nic.active(False)
+                self.__eth_nic.active(False)
 
     # ---------------------------------------------------------------
     # Background process for gsm connection
     # ---------------------------------------------------------------
     async def __process_gsm(self):
-        # Configure the network interface card (GSM)
-        pwr = Pin('PWR_GSM', Pin.OUT_OD)
-        mon = Pin('GSM_MON', Pin.IN, Pin.PULL_DOWN)
-        nic = network.GSM(UART('GSM', 115200, flow=UART.RTS|UART.CTS, rxbuf=1024, dma=True), pwr_pin=pwr, mon_pin=mon, info=True)
-
         while True:
             # Print info
             print('\r\nWaiting for link-up')
 
             # Configure the GSM parameters
-            nic.config(user='gprs', pwd='gprs', apn='internet', pin='1234')
+            self.__gsm_nic.config(user='gprs', pwd='gprs', apn='internet', pin='1234')
 
             # Connect to the gsm network
-            nic.connect()
+            self.__gsm_nic.connect()
 
             # Wait till connection
-            while not nic.isconnected():
+            while not self.__gsm_nic.isconnected():
                 await uasyncio.sleep(1)
 
             # Status info
-            ipaddr = nic.ifconfig('ipaddr')
+            ipaddr = self.__gsm_nic.ifconfig('ipaddr')
             print('GSM connection done: %s' % ipaddr)
 
             # GSM info
-            print('IMEI Number: %s' % nic.imei())
-            print('IMSI Number: %s' % nic.imsi())
-            qos = nic.qos()
+            print('IMEI Number: %s' % self.__gsm_nic.imei())
+            print('IMSI Number: %s' % self.__gsm_nic.imsi())
+            qos = self.__gsm_nic.qos()
             print('Signal Quality: %d,%d' % (qos[0], qos[1]))
 
             try:
@@ -251,7 +244,7 @@ class NtripClient:
                             raise Exception('Data Error!')
 
                         # Check the link status
-                        if not nic.isconnected():
+                        if not self.__gsm_nic.isconnected():
                             raise Exception('Link Error!')
 
                         # Suspend for a while
@@ -268,28 +261,45 @@ class NtripClient:
                     print('Stream Closed!')
 
                     # Disconnect from the network
-                    nic.disconnect()
+                    self.__gsm_nic.disconnect()
 
             # Exception while open connection
             except Exception:
                 # Disconnect from the network
-                nic.disconnect()
+                self.__gsm_nic.disconnect()
 
     # -----------------------------------------------------------
     # Start the background process
     # -----------------------------------------------------------
     def start(self, nic):
         if nic == 'eth':
+            # Release the allocated resource for ethernet
+            del self.__eth_nic
+
+            # Configure the network interface card (Ethernet)
+            self.__eth_nic = network.LAN(self.__on_link_stat)
+
+            # Start the async process
             return uasyncio.create_task(self.__process_eth())
+
         if nic == 'gsm':
+            # Release the allocated resource for gsm
+            del self.__gsm_nic
+
+            # Configure the network interface card (GSM)
+            self.__gsm_nic = network.GSM(UART('GSM', 115200, flow=UART.RTS|UART.CTS, rxbuf=1024, dma=True), pwr_pin=Pin('PWR_GSM', Pin.OUT_OD), mon_pin=Pin('GSM_MON', Pin.IN, Pin.PULL_DOWN), info=True)
+
+            # Start the async process
             return uasyncio.create_task(self.__process_gsm())
+
         return None
 
     # -----------------------------------------------------------
     # Link up/down
     # -----------------------------------------------------------
-    def active(self, status):
-        pass
+    def active(self, nic, status):
+        if nic == 'eth':
+            self.__eth_nic.active(status)
 
 # ---------------------------------------------------------------
 # GNSS Based AHRS Fiter
@@ -355,7 +365,7 @@ class AHRSFilter:
     # -----------------------------------------------------------
     def getHeading(self):
         hdt = '$GPHDT,{:.3f},T*'.format(self.__yaw * -57.29577951)
-        hdt = hdt + self.__chksm(hdt)
+        hdt = hdt + self.__chksm(hdt) + '\r\n'
         return hdt
 
 # ---------------------------------------------------------------
@@ -388,6 +398,9 @@ class AgOpenGps:
         # UART configuration of ZED2 without application buffer and UBX parser
         self.__zed2 = UART('ZED2', 460800, dma=True, parser=self.__ublx)
 
+        # UART configuration of service port without application buffer
+        self.__srv = UART('SRV', 115200, dma=True)
+
         # Power-on the GNSS subsystem
         self.__pwr = machine.Power()
         self.__pwr.on(machine.POWER_GNSS)
@@ -401,8 +414,12 @@ class AgOpenGps:
         self.__pwr.off(machine.POWER_GNSS)
 
         # Delete all objects
+        self.__zed1.deinit()
+        self.__zed2.deinit()
+        self.__srv.deinit()
         del self.__zed1
         del self.__zed2
+        del self.__srv
         del self.__ntrip
         del self.__ublx
         del self.__nmea
@@ -419,10 +436,13 @@ class AgOpenGps:
             try:
                 # Send the saved message
                 msg = self.__msgq_nmea.popleft().decode('utf-8')
+                #self.__srv.send(msg)
                 print(msg[:-2])
 
                 # Send the heading information
-                print(self.__ahrs.getHeading())
+                msg = self.__ahrs.getHeading()
+                #self.__srv.send(msg)
+                print(msg[:-2])
             except Exception:
                 pass
 
@@ -433,7 +453,7 @@ class AgOpenGps:
                 pass
 
             # Yield the next coro
-            await uasyncio.sleep_ms(10)
+            await uasyncio.sleep_ms(20)
 
     # -----------------------------------------------------------
     # NMEA message received callback
@@ -500,8 +520,8 @@ class AgOpenGps:
     # -----------------------------------------------------------
     # Link up/down
     # -----------------------------------------------------------
-    def active(self, status):
-        self.__ntrip.active(status)
+    def active(self, nic, status):
+        self.__ntrip.active(nic, status)
 
 # ---------------------------------------------------------------
 # RTCM message received callback

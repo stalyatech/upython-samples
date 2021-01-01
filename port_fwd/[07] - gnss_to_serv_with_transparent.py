@@ -19,26 +19,23 @@ led3 = LED(3)
 pwr = machine.Power()
 pwr.on(machine.POWER_GNSS)
 
-# UART configuration of ZEDs
-zed1 = UART('ZED1', 460800, dma=True)
-zed2 = UART('ZED2', 460800, dma=True)
-zed3 = UART('ZED3', 460800, dma=True)
+# UART configuration of ZED1
+zed1 = UART('ZED1', 460800, dma=False)
 
 # ---------------------------------------------------------------
-# XBEE Expansions
+# Service Port
 # ---------------------------------------------------------------
 
-# Power-On the XBEE subsystem
-pwr.on(machine.POWER_XBEE)
+# UART configuration of service port
+srv = UART('SRV', 460800, dma=True)
 
-# XBEE LP UART configuration
-xbee_lp = UART('XBEE_LP', 115200, dma=False)
+# ---------------------------------------------------------------
+# Port Forwarding
+# ---------------------------------------------------------------
 
 # Hardware connection of ports
-# (xbee_lp -> zed1)
-# (xbee_lp -> zed2)
-# (xbee_lp -> zed3)
-xbee_lp.connect([zed1, zed2, zed3])
+# (zed1 -> serv)
+zed1.connect(srv)
 
 # ---------------------------------------------------------------
 # Application process

@@ -61,6 +61,11 @@ zed1 = UART('ZED1', 460800, dma=True)
 zed2 = UART('ZED2', 460800, dma=True)
 zed3 = UART('ZED3', 460800, dma=True)
 
+# Set the GNSS ISR callbacks
+zed1.callback(OnDataRecvFromZED1)
+zed2.callback(OnDataRecvFromZED2)
+zed3.callback(OnDataRecvFromZED3)
+
 # ---------------------------------------------------------------
 # XBEE Expansions
 # ---------------------------------------------------------------
@@ -69,23 +74,21 @@ zed3 = UART('ZED3', 460800, dma=True)
 pwr.on(machine.POWER_XBEE)
 
 # XBEE LP UART configuration
-xbee_lp = UART('XBEE_LP', 115200)
+xbee_lp = UART('XBEE_LP', 115200, dma=True)
+
+# Set the XBEE_LP ISR callback
+xbee_lp.callback(OnDataRecvFromXBeeLP)
 
 # ---------------------------------------------------------------
 # Application process
 # ---------------------------------------------------------------
 async def app_proc():
-    # Set the GNSS ISR callbacks
-    zed1.callback(OnDataRecvFromZED1)
-    zed2.callback(OnDataRecvFromZED2)
-    zed3.callback(OnDataRecvFromZED3)
-
-    # Set the XBEE_LP ISR callback
-    xbee_lp.callback(OnDataRecvFromXBeeLP)
-
-    # Wait infinetely
     while True:
-        pass
+        # Heart-beat
+        led3.toggle()
+
+        # Yield the other process
+        await uasyncio.sleep_ms(100)
 
 # ---------------------------------------------------------------
 # Application entry point

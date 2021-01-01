@@ -1,5 +1,6 @@
 import re
 import gc
+import math
 import json
 import binascii
 import network
@@ -313,6 +314,8 @@ class AHRSFilter:
         self.__heading = 0
         self.__accuracy = 0
         self.__carrsoln = 0
+        self.__bodyNED = (0.0, 0.0, 0.0)
+        self.__groundNED = (0.0, 0.0, 0.0)
         self.__yaw = 0
         self.__roll = 0
         self.__pitch = 0
@@ -336,8 +339,8 @@ class AHRSFilter:
     def setValues(self, heading, accuracy, carrsoln):
         self.__accuracy = accuracy
         self.__carrsoln = carrsoln
-        #if self.__carrsoln == 2:
-        self.__heading = -heading * 0.00001
+        if self.__carrsoln == 2:
+            self.__heading = -heading * 0.00001
 
     # -----------------------------------------------------------
     # Get the euler angles
@@ -348,7 +351,7 @@ class AHRSFilter:
     # -----------------------------------------------------------
     # Update the IMU values and apply the filter
     # -----------------------------------------------------------
-    def update(self):
+    def update(self, relNED):
         # Wait for sensor ready
         while not self.__imu.ready():
             pass
@@ -359,6 +362,10 @@ class AHRSFilter:
 
         # Update the filtered values (DCM algorithm)
         (self.__roll, self.__pitch, self.__yaw) = self.__dcm.update(vals, self.__heading * 0.017453292)
+
+        # Update the transformation values (DCM algorithm)
+        self.__bodyNED = relNED
+        self.__groundNED = self.__dcm.transf(relNED)
 
     # -----------------------------------------------------------
     # Prepare heading NMEA sentence
@@ -379,6 +386,12 @@ class AgOpenGps:
 
     # AHRS filter
     __ahrs = AHRSFilter()
+
+    # Dual antenna roll
+    __rollHp = 0
+
+    # North, East and Down components of relative position vector
+    __relNED = (0.0, 0.0, 0.0)
 
     # -----------------------------------------------------------
     # Constructor
@@ -430,7 +443,7 @@ class AgOpenGps:
     async def __process(self):
         while True:
             # Update the IMU values
-            self.__ahrs.update()
+            self.__ahrs.update(self.__relNED)
 
             # Decode the NMEA messages
             try:
@@ -500,6 +513,18 @@ class AgOpenGps:
     @staticmethod
     def __on_ublx_dec(msgType, msgItems):
         if msgType == 'NAV_RELPOSNED':
+            AgOpenGps.__relNED = (float(msgItems[0]), float(msgItems[1]), float(msgItems[2]))
+            N = AgOpenGps.__relNED[0]
+            E = AgOpenGps.__relNED[1]
+            D = AgOpenGps.__relNED[2]
+            try:
+                NE2 = math.sqrt(N * N + E * E)
+                if NE2 > 0.0000001:
+                    AgOpenGps.__rollHp = round(100 * math.atan(D / NE2) * 180 / 3.14159)
+                else:
+                    AgOpenGps.__rollHp = 90
+            except Exception:
+                pass
             carrsoln = (msgItems[5] & 0x18) >> 3
             AgOpenGps.__ahrs.setValues(msgItems[3], msgItems[4], carrsoln)
 
@@ -551,7 +576,7 @@ agOpen = AgOpenGps(on_rtcm_msg=OnRtcmMsg, on_link_stat=OnLinkStatus)
 # Main process
 # ---------------------------------------------------------------
 async def main():
-    await agOpen.start('gsm')
+    await agOpen.start('eth')
 
 # ---------------------------------------------------------------
 # Application entry point
